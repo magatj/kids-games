@@ -96,6 +96,15 @@
       margin-top: 2px;
     }
 
+    .hearts {
+      display: flex;
+      justify-content: center;
+      gap: 3px;
+      margin-top: 4px;
+      font-size: 1.5rem;
+      line-height: 1;
+    }
+
     .game-wrap {
       position: relative;
       width: min(100%, 960px);
@@ -280,7 +289,7 @@
       </div>
       <div class="hud">
         <div class="hud-card"><span>Score</span><strong id="score">0</strong></div>
-        <div class="hud-card"><span>Lives</span><strong id="lives">3</strong></div>
+        <div class="hud-card"><span>Health</span><div class="hearts" id="lives"></div></div>
         <div class="hud-card"><span>Wave</span><strong id="wave">1</strong></div>
         <div class="hud-card"><span>Best</span><strong id="best">0</strong></div>
       </div>
@@ -431,7 +440,10 @@
 
     function updateHud() {
       scoreEl.textContent = state.score;
-      livesEl.textContent = state.lives;
+      const maxLives = 5;
+      livesEl.innerHTML = Array.from({ length: maxLives }, (_, i) =>
+        `<span>${i < state.lives ? "❤️" : "🖤"}</span>`
+      ).join("");
       waveEl.textContent = state.wave;
       bestEl.textContent = state.best;
     }
