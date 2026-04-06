@@ -146,6 +146,27 @@ let score = 0, highScore = parseInt(localStorage.getItem('addieSweet')||'0');
 let lives = 3, level = 1, frame = 0;
 let hitCool = 0, lvlDisplay = 0, scoreNext = 300;
 
+// ── PAUSE ────────────────────────────────────────────────────────────────────
+let paused = false;
+const PAUSE_BTN = { x: BASE_W - 108, y: 6, w: 96, h: 32 };
+
+function pauseBtnHit(cx, cy) {
+  return cx >= PAUSE_BTN.x && cx <= PAUSE_BTN.x + PAUSE_BTN.w &&
+         cy >= PAUSE_BTN.y && cy <= PAUSE_BTN.y + PAUSE_BTN.h;
+}
+
+function togglePause() {
+  if (state !== 'playing') return;
+  paused = !paused;
+}
+
+document.addEventListener('keydown', (e) => {
+  if ((e.code === 'Escape' || e.code === 'KeyP') && state === 'playing') {
+    e.preventDefault();
+    togglePause();
+  }
+});
+
 // ─── PARTICLES ──────────────────────────────────────────────────────────────
 let particles = [];
 const CANDY_COLS = ['#ff6b9d','#ff9ff3','#c56bff','#ffb3e6','#ff6b6b','#ffd93d','#ff9f43','#a29bfe','#ffeaa7'];
@@ -491,6 +512,7 @@ const keysHeld = {left:false, right:false};
 
 document.addEventListener('keydown', e=>{
   if (e.code==='KeyM') { initAudio(); toggleMusic(); return; }
+  if (paused) return; // ignore movement input while paused
   if (/ArrowLeft|KeyA/.test(e.code))  { e.preventDefault(); keysHeld.left=true; }
   if (/ArrowRight|KeyD/.test(e.code)) { e.preventDefault(); keysHeld.right=true; }
   if (/Space|ArrowUp/.test(e.code)) {
@@ -518,12 +540,13 @@ function getTouchSide(e) {
 canvas.addEventListener('touchstart', e=>{
   e.preventDefault(); initAudio();
   if (state !== 'playing') { startGame(); return; }
+  if (paused) return;
   const s = getTouchSide(e); keysHeld.left=s.left; keysHeld.right=s.right;
 }, {passive:false});
 
 canvas.addEventListener('touchmove', e=>{
   e.preventDefault();
-  if (state !== 'playing') return;
+  if (state !== 'playing' || paused) return;
   const s = getTouchSide(e); keysHeld.left=s.left; keysHeld.right=s.right;
 }, {passive:false});
 
@@ -534,9 +557,15 @@ canvas.addEventListener('touchend', e=>{
   const s = getTouchSide(e); keysHeld.left=s.left; keysHeld.right=s.right;
 }, {passive:false});
 
-canvas.addEventListener('click', ()=>{
+canvas.addEventListener('click', (e)=>{
   initAudio();
-  if (state !== 'playing') startGame();
+  if (state !== 'playing') { startGame(); return; }
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = BASE_W / rect.width;
+  const scaleY = BASE_H / rect.height;
+  const cx = (e.clientX - rect.left) * scaleX;
+  const cy = (e.clientY - rect.top) * scaleY;
+  if (pauseBtnHit(cx, cy)) { togglePause(); }
 });
 
 // ─── PRINCESS OBJECT ────────────────────────────────────────────────────────
@@ -803,6 +832,19 @@ function drawHUD() {
   ctx.textAlign='right'; ctx.font='bold 14px Arial'; ctx.fillStyle='rgba(255,255,255,.8)';
   ctx.fillText(bgMusicOn?'🎵 M':'🔇 M', BASE_W-16, 82);
 
+  // Pause button (top-right)
+  const pb = PAUSE_BTN;
+  ctx.globalAlpha = 0.82;
+  ctx.fillStyle = paused ? '#cc44ee' : '#ff66bb';
+  rrect(pb.x, pb.y, pb.w, pb.h, 10); ctx.fill();
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = 'white';
+  ctx.font = 'bold 13px Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(paused ? '▶ Resume' : '⏸ Pause', pb.x + pb.w / 2, pb.y + pb.h / 2);
+  ctx.textBaseline = 'alphabetic';
+
   // On-screen arrow buttons (always shown during play)
   const btnW=90, btnH=70, btnY=BASE_H-GROUND_H-btnH-8;
 
@@ -911,13 +953,31 @@ function drawGameOverScreen() {
 
 // ─── START GAME ─────────────────────────────────────────────────────────────
 function startGame() {
-  state='playing'; score=0; lives=3; level=1; frame=0;
+  state='playing'; paused=false; score=0; lives=3; level=1; frame=0;
   scoreNext=300; hitCool=0; lvlDisplay=0; speechCool=0;
   items=[]; particles=[]; popups=[];
   itemTimer=0; itemInterval=60;
   keysHeld.left=false; keysHeld.right=false;
   PRINCESS.reset(); CAT.reset();
   melodyIdx=0; melodyTime=audioCtx?audioCtx.currentTime:0;
+}
+
+// ─── PAUSE OVERLAY ──────────────────────────────────────────────────────────
+function drawPauseOverlay() {
+  ctx.save();
+  ctx.fillStyle = 'rgba(255,220,245,0.72)';
+  ctx.fillRect(0, 0, BASE_W, BASE_H);
+  ctx.textAlign = 'center';
+  ctx.font = 'bold 68px "Comic Sans MS", Arial';
+  ctx.fillStyle = '#cc2299';
+  ctx.shadowColor = '#ff44aa';
+  ctx.shadowBlur = 22;
+  ctx.fillText('⏸ Paused!', BASE_W / 2, BASE_H / 2 - 28);
+  ctx.shadowBlur = 0;
+  ctx.font = '22px "Comic Sans MS", Arial';
+  ctx.fillStyle = '#883366';
+  ctx.fillText('Press P, Escape, or tap ⏸ to resume', BASE_W / 2, BASE_H / 2 + 30);
+  ctx.restore();
 }
 
 // ─── MAIN LOOP ──────────────────────────────────────────────────────────────
@@ -931,6 +991,15 @@ function loop() {
     drawBackground(); updateParticles(); drawParticles();
     CAT.draw(); PRINCESS.draw();
     drawGameOverScreen(); frame++; return;
+  }
+
+  if (paused) {
+    drawBackground();
+    drawItems(); drawParticles();
+    CAT.draw(); PRINCESS.draw();
+    drawHUD(); updateDrawPopups();
+    drawPauseOverlay();
+    return;
   }
 
   // Update

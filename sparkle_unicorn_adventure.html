@@ -211,6 +211,27 @@ let hitCool    = 0;
 let lvlDisplay = 0;
 let scoreNext  = 500;
 
+// ── PAUSE ────────────────────────────────────────────────────────────────────
+let paused = false;
+const PAUSE_BTN = { x: BASE_W - 108, y: 6, w: 96, h: 32 };
+
+function pauseBtnHit(cx, cy) {
+  return cx >= PAUSE_BTN.x && cx <= PAUSE_BTN.x + PAUSE_BTN.w &&
+         cy >= PAUSE_BTN.y && cy <= PAUSE_BTN.y + PAUSE_BTN.h;
+}
+
+function togglePause() {
+  if (state !== 'playing') return;
+  paused = !paused;
+}
+
+document.addEventListener('keydown', (e) => {
+  if ((e.code === 'Escape' || e.code === 'KeyP') && state === 'playing') {
+    e.preventDefault();
+    togglePause();
+  }
+});
+
 // ─── UNICORN ─────────────────────────────────────────────────────────────────
 const UNI = {
   x: 120, y: 0, w: 88, h: 72,
@@ -905,6 +926,19 @@ function drawHUD() {
     addieMsg--;
   }
 
+  // Pause button (top-right)
+  const pb = PAUSE_BTN;
+  ctx.globalAlpha = 0.82;
+  ctx.fillStyle = paused ? '#aa44ff' : '#cc66ff';
+  rrect(pb.x, pb.y, pb.w, pb.h, 10); ctx.fill();
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = 'white';
+  ctx.font = 'bold 13px Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(paused ? '▶ Resume' : '⏸ Pause', pb.x + pb.w / 2, pb.y + pb.h / 2);
+  ctx.textBaseline = 'alphabetic';
+
   ctx.restore();
 }
 
@@ -1007,28 +1041,56 @@ document.addEventListener('keydown', e => {
   e.preventDefault();
   initAudio();
   if (state !== 'playing') startGame();
-  else UNI.jump();
+  else if (!paused) UNI.jump();
 });
 document.addEventListener('keyup', e => { keys[e.code] = false; });
 
 canvas.addEventListener('touchstart', e => {
   e.preventDefault(); initAudio();
-  if (state !== 'playing') startGame(); else UNI.jump();
+  if (state !== 'playing') { startGame(); return; }
+  if (!paused) UNI.jump();
 }, { passive: false });
-canvas.addEventListener('click', () => {
+canvas.addEventListener('click', (e) => {
   initAudio();
-  if (state !== 'playing') startGame(); else UNI.jump();
+  if (state !== 'playing') { startGame(); return; }
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = BASE_W / rect.width;
+  const scaleY = BASE_H / rect.height;
+  const cx = (e.clientX - rect.left) * scaleX;
+  const cy = (e.clientY - rect.top) * scaleY;
+  if (pauseBtnHit(cx, cy)) { togglePause(); return; }
+  if (!paused) UNI.jump();
 });
 
 // ─── START / RESET ───────────────────────────────────────────────────────────
 function startGame() {
   state       = 'playing';
+  paused      = false;
   score       = 0; lives = 3; level = 1;
   speed       = 4; frame = 0;
   scoreNext   = 500; lvlDisplay = 0; hitCool = 0; addieMsg = 0;
   obstacles   = []; collectibles = []; particles = []; popups = [];
   obsTimer    = 0; colTimer = 0; obsInterval = 120; colInterval = 75;
   UNI.reset();
+}
+
+// ─── PAUSE OVERLAY ───────────────────────────────────────────────────────────
+function drawPauseOverlay() {
+  ctx.save();
+  ctx.fillStyle = 'rgba(20, 0, 60, 0.70)';
+  ctx.fillRect(0, 0, BASE_W, BASE_H);
+  ctx.textAlign = 'center';
+  const hue = (frame * 2) % 360;
+  ctx.font = `bold 70px Arial`;
+  ctx.fillStyle = `hsl(${hue}, 100%, 72%)`;
+  ctx.shadowColor = `hsl(${hue}, 100%, 45%)`;
+  ctx.shadowBlur = 26;
+  ctx.fillText('✨ Paused! ✨', BASE_W / 2, BASE_H / 2 - 28);
+  ctx.shadowBlur = 0;
+  ctx.font = '20px Arial';
+  ctx.fillStyle = 'rgba(255,220,255,0.9)';
+  ctx.fillText('Press P, Escape, or tap ⏸ to resume', BASE_W / 2, BASE_H / 2 + 30);
+  ctx.restore();
 }
 
 // ─── GAME LOOP ───────────────────────────────────────────────────────────────
@@ -1043,6 +1105,18 @@ function loop() {
   if (state === 'gameover') {
     drawBackground(); updateParticles(); drawParticles();
     drawGameOverScreen(); frame++;
+    return;
+  }
+
+  if (paused) {
+    drawBackground();
+    drawObstacles();
+    drawCollectibles();
+    drawParticles();
+    UNI.draw();
+    drawHUD();
+    updateDrawPopups();
+    drawPauseOverlay();
     return;
   }
 

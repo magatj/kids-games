@@ -493,9 +493,46 @@ body {
 <!-- ── MAIN GAME ── -->
 <div id="gameWrap" class="game-wrap" style="display:none">
 
-  <div class="header">
+  <div class="header" style="position:relative">
     <h2>🕷️ Skyler's Super Hero Adventure!</h2>
     <div class="stars-row" id="starsRow"></div>
+    <button id="gamePauseBtn" onclick="toggleGamePause()" style="
+      position:absolute; top:8px; right:10px;
+      padding:7px 16px; border:none; border-radius:50px;
+      background:linear-gradient(135deg,#dc143c,#8b0000);
+      color:white; font-family:inherit; font-weight:900;
+      font-size:clamp(12px,2.5vw,15px); cursor:pointer;
+      box-shadow:0 4px 12px rgba(180,0,0,0.4);
+      transition:transform 0.15s;
+    ">⏸ Pause</button>
+  </div>
+
+  <!-- PAUSE OVERLAY -->
+  <div id="pauseOverlay" style="
+    display:none; position:fixed; inset:0; z-index:150;
+    background:rgba(5,5,20,0.93);
+    flex-direction:column; align-items:center; justify-content:center;
+    gap:18px;
+  ">
+    <div style="font-size:clamp(48px,12vw,72px)">⏸</div>
+    <h2 style="
+      font-size:clamp(30px,7vw,52px); color:#ff4455;
+      text-shadow:0 0 24px rgba(220,20,60,0.8);
+      font-family:'Comic Sans MS',cursive; text-align:center;
+    ">Game Paused!</h2>
+    <p style="
+      font-size:clamp(16px,3.5vw,22px);
+      color:rgba(255,255,255,0.85); text-align:center;
+      font-family:'Comic Sans MS',cursive;
+    ">Press P or Escape to resume</p>
+    <button onclick="toggleGamePause()" style="
+      padding:18px 52px;
+      font-size:clamp(18px,4vw,26px);
+      border-radius:60px; border:none;
+      background:linear-gradient(135deg,#dc143c,#003087);
+      color:white; font-family:inherit; font-weight:900;
+      cursor:pointer; box-shadow:0 7px 22px rgba(180,0,0,0.5);
+    ">▶ Resume!</button>
   </div>
 
   <div class="tabs">
@@ -1017,6 +1054,54 @@ function stopAutoPlay() {
     btn.classList.remove('playing');
   }
 }
+
+// ── PAUSE ────────────────────────────────────────────────────────────────────
+let gamePaused = false;
+
+function toggleGamePause() {
+  gamePaused = !gamePaused;
+  const overlay = document.getElementById('pauseOverlay');
+  const btn     = document.getElementById('gamePauseBtn');
+
+  if (gamePaused) {
+    overlay.style.display = 'flex';
+    btn.textContent = '▶ Resume';
+    // Pause auto-play and speech
+    if (autoPlaying) {
+      clearTimeout(autoPlayTimer);
+      autoPlayTimer = null;
+    }
+    if (window.speechSynthesis) window.speechSynthesis.pause();
+    // Disable interactive elements
+    document.querySelectorAll('.choice-btn, .nav-btn, .autoplay-btn, .learn-speak-btn, .seq-bub, .tab, .learn-sub-tab').forEach(el => {
+      el.setAttribute('data-paused-disabled', '1');
+      el.style.pointerEvents = 'none';
+      el.style.opacity = '0.4';
+    });
+  } else {
+    overlay.style.display = 'none';
+    btn.textContent = '⏸ Pause';
+    // Resume auto-play if it was active
+    if (autoPlaying) autoPlayStep();
+    if (window.speechSynthesis) window.speechSynthesis.resume();
+    // Re-enable interactive elements
+    document.querySelectorAll('[data-paused-disabled]').forEach(el => {
+      el.removeAttribute('data-paused-disabled');
+      el.style.pointerEvents = '';
+      el.style.opacity = '';
+    });
+  }
+}
+
+document.addEventListener('keydown', (e) => {
+  const isGameActive = document.getElementById('gameWrap') &&
+                       document.getElementById('gameWrap').style.display !== 'none';
+  if (!isGameActive) return;
+  if (e.code === 'Escape' || e.code === 'KeyP') {
+    e.preventDefault();
+    toggleGamePause();
+  }
+});
 
 // ── CELEBRATION ──────────────────────────────────────────────────────────────
 function celebrate() {
