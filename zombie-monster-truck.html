@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zombie Monster Truck Smash</title>
+  <style>
+    :root {
+      --sky-top: #1f2937;
+      --sky-bottom: #7c2d12;
+      --fog: rgba(163, 230, 53, 0.18);
+      --ground-a: #3f6212;
+      --ground-b: #1f3b08;
+      --panel: rgba(12, 18, 22, 0.82);
+      --panel-border: rgba(255, 255, 255, 0.18);
+      --text: #f8fafc;
+      --green: #84cc16;
+      --acid: #bef264;
+      --orange: #fb923c;
+      --red: #ef4444;
+      --purple: #a78bfa;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Trebuchet MS", "Arial Rounded MT Bold", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top, rgba(255,255,255,0.16), transparent 22%),
+        linear-gradient(180deg, var(--sky-top), #312e81 45%, var(--sky-bottom));
+    }
+
+    .shell {
+      width: min(100%, 1120px);
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .brand {
+      padding: 16px 20px 20px;
+      border-radius: 28px;
+      background:
+        linear-gradient(145deg, rgba(255,255,255,0.92), rgba(255,255,255,0.74));
+      color: #1f2937;
+      box-shadow: 0 18px 34px rgba(0, 0, 0, 0.18);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .brand::after {
+      content: "";
+      position: absolute;
+      left: 14px;
+      right: 14px;
+      bottom: 10px;
+      height: 12px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--green), var(--acid), var(--orange), var(--purple));
+    }
+
+    .brand h1,
+    .brand p {
+      margin: 0;
+    }
+
+    .brand h1 {
+      font-size: clamp(2rem, 4vw, 3.2rem);
+      color: #166534;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .brand p {
+      margin-top: 6px;
+      color: #334155;
+    }
+
+    .hud {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .card {
+      min-width: 110px;
+      padding: 12px 16px;
+      border-radius: 24px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.12), transparent 36%),
+        var(--panel);
+      border: 1px solid var(--panel-border);
+      text-align: center;
+      box-shadow: 0 16px 28px rgba(15, 23, 42, 0.18);
+      backdrop-filter: blur(8px);
+    }
+
+    .card span {
+      display: block;
+      font-size: 0.8rem;
+      color: #d9f99d;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .card strong {
+      display: block;
+      margin-top: 4px;
+      font-size: 1.9rem;
+    }
+
+    .game-wrap {
+      position: relative;
+      width: min(100%, 980px);
+      margin: 0 auto;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      border-radius: 32px;
+      border: 6px solid rgba(255,255,255,0.96);
+      background: #0f172a;
+      box-shadow: 0 28px 54px rgba(15, 23, 42, 0.28);
+      touch-action: none;
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+    }
+
+    .overlay.hidden {
+      display: none;
+    }
+
+    .panel {
+      width: min(100%, 430px);
+      padding: 28px 24px;
+      border-radius: 30px;
+      text-align: center;
+      color: #1e293b;
+      background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,255,255,0.84));
+      border: 4px solid rgba(255,255,255,0.95);
+      box-shadow: 0 24px 44px rgba(15, 23, 42, 0.16);
+    }
+
+    .panel h2,
+    .panel p {
+      margin: 0;
+    }
+
+    .panel h2 {
+      color: #166534;
+      font-size: 2rem;
+      margin-bottom: 10px;
+    }
+
+    .panel p {
+      margin-top: 10px;
+      line-height: 1.45;
+      color: #475569;
+    }
+
+    button {
+      border: 0;
+      border-radius: 999px;
+      padding: 14px 26px;
+      margin-top: 16px;
+      font: inherit;
+      font-weight: 900;
+      letter-spacing: 0.03em;
+      color: white;
+      cursor: pointer;
+      background: linear-gradient(180deg, #65a30d, #166534);
+      box-shadow: inset 0 -4px 0 rgba(0,0,0,0.16);
+    }
+
+    .controls {
+      width: min(100%, 980px);
+      margin: 16px auto 0;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    .touch-btn {
+      min-height: 78px;
+      border-radius: 24px;
+      margin-top: 0;
+      border: 1px solid rgba(255,255,255,0.18);
+      font-size: 1rem;
+    }
+
+    .left {
+      background: linear-gradient(180deg, #fb7185, #be123c);
+    }
+
+    .right {
+      background: linear-gradient(180deg, #34d399, #059669);
+    }
+
+    .jump {
+      background: linear-gradient(180deg, #facc15, #f59e0b);
+      color: #422006;
+    }
+
+    .pause {
+      background: linear-gradient(180deg, #a78bfa, #7c3aed);
+    }
+
+    .help {
+      width: min(100%, 980px);
+      margin: 16px auto 0;
+      text-align: center;
+      color: #e2e8f0;
+      line-height: 1.45;
+    }
+
+    @media (max-width: 760px) {
+      .controls {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .shell {
+        padding: 10px;
+      }
+
+      .brand,
+      .hud {
+        width: 100%;
+      }
+
+      .hud {
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <h1>Zombie Monster Truck Smash</h1>
+        <p>Drive a spooky monster truck, jump ramps, crush cars, and rumble through the wasteland.</p>
+      </div>
+      <div class="hud">
+        <div class="card"><span>Crush</span><strong id="score">0</strong></div>
+        <div class="card"><span>Distance</span><strong id="distance">0</strong></div>
+        <div class="card"><span>Best</span><strong id="best">0</strong></div>
+        <div class="card"><span>Speed</span><strong id="speed">0</strong></div>
+      </div>
+    </header>
+
+    <section class="game-wrap">
+      <canvas id="game" width="980" height="620" aria-label="Zombie monster truck game"></canvas>
+
+      <div class="overlay" id="startOverlay">
+        <div class="panel">
+          <h2>Zombie Truck Time!</h2>
+          <p>Drive the zombie monster truck, jump over ramps, and crush tiny cars under your giant wheels.</p>
+          <p>Keyboard: Left and Right move, Space jumps, P pauses.</p>
+          <button id="startBtn">Start Smash</button>
+        </div>
+      </div>
+
+      <div class="overlay hidden" id="endOverlay">
+        <div class="panel">
+          <h2 id="endTitle">Smash Complete!</h2>
+          <p id="endText">You crushed 0 cars.</p>
+          <button id="restartBtn">Play Again</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="controls">
+      <button class="touch-btn left" id="leftBtn">Left</button>
+      <button class="touch-btn jump" id="jumpBtn">Jump</button>
+      <button class="touch-btn right" id="rightBtn">Right</button>
+      <button class="touch-btn pause" id="pauseBtn">Pause</button>
+    </section>
+
+    <section class="help">
+      Touch controls work on phones and tablets. Keyboard works too.
+    </section>
+  </main>
+
+  <script>
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+
+    const scoreEl = document.getElementById("score");
+    const distanceEl = document.getElementById("distance");
+    const bestEl = document.getElementById("best");
+    const speedEl = document.getElementById("speed");
+    const startOverlay = document.getElementById("startOverlay");
+    const endOverlay = document.getElementById("endOverlay");
+    const endTitle = document.getElementById("endTitle");
+    const endText = document.getElementById("endText");
+    const startBtn = document.getElementById("startBtn");
+    const restartBtn = document.getElementById("restartBtn");
+    const leftBtn = document.getElementById("leftBtn");
+    const rightBtn = document.getElementById("rightBtn");
+    const jumpBtn = document.getElementById("jumpBtn");
+    const pauseBtn = document.getElementById("pauseBtn");
+
+    const WIDTH = canvas.width;
+    const HEIGHT = canvas.height;
+    const GROUND_Y = 470;
+    const BEST_KEY = "zombie-monster-truck-best";
+
+    const controls = {
+      left: false,
+      right: false,
+      jump: false
+    };
+
+    const state = {
+      running: false,
+      paused: false,
+      animationFrame: 0,
+      best: Number(localStorage.getItem(BEST_KEY) || 0),
+      score: 0,
+      distance: 0,
+      worldOffset: 0,
+      speed: 0,
+      audio: null,
+      truck: {
+        x: 220,
+        y: 0,
+        vx: 0,
+        vy: 0,
+        angle: 0,
+        onGround: true,
+        crushGlow: 0
+      },
+      hills: [],
+      ramps: [],
+      cars: [],
+      particles: []
+    };
+
+    function initWorld() {
+      state.hills = Array.from({ length: 7 }, (_, i) => ({
+        x: i * 220,
+        h: 90 + (i % 3) * 24
+      }));
+    }
+
+    function unlockAudio() {
+      if (!state.audio) {
+        state.audio = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (state.audio.state === "suspended") {
+        state.audio.resume();
+      }
+    }
+
+    function playTone(freq, duration, type, volume, slide = 1) {
+      if (!state.audio) return;
+      const now = state.audio.currentTime;
+      const osc = state.audio.createOscillator();
+      const gain = state.audio.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, now);
+      osc.frequency.exponentialRampToValueAtTime(Math.max(50, freq * slide), now + duration);
+      gain.gain.setValueAtTime(volume, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+      osc.connect(gain);
+      gain.connect(state.audio.destination);
+      osc.start(now);
+      osc.stop(now + duration);
+    }
+
+    function playSound(kind) {
+      if (!state.audio) return;
+      if (kind === "start") {
+        playTone(240, 0.18, "triangle", 0.08, 1.7);
+        setTimeout(() => playTone(360, 0.18, "triangle", 0.07, 1.4), 100);
+      }
+      if (kind === "jump") {
+        playTone(420, 0.14, "square", 0.05, 0.7);
+      }
+      if (kind === "crush") {
+        playTone(120, 0.18, "sawtooth", 0.08, 0.45);
+        setTimeout(() => playTone(90, 0.14, "triangle", 0.05, 1.2), 60);
+      }
+      if (kind === "land") {
+        playTone(150, 0.12, "triangle", 0.04, 0.65);
+      }
+    }
+
+    function resetGame() {
+      state.paused = false;
+      pauseBtn.textContent = "Pause";
+      state.score = 0;
+      state.distance = 0;
+      state.worldOffset = 0;
+      state.speed = 4;
+      state.truck.x = 220;
+      state.truck.y = GROUND_Y - 40;
+      state.truck.vx = 0;
+      state.truck.vy = 0;
+      state.truck.angle = 0;
+      state.truck.onGround = true;
+      state.truck.crushGlow = 0;
+      state.ramps = [];
+      state.cars = [];
+      state.particles = [];
+
+      for (let i = 0; i < 6; i += 1) {
+        spawnCar(520 + i * 280 + Math.random() * 120);
+      }
+      for (let i = 0; i < 4; i += 1) {
+        spawnRamp(760 + i * 620 + Math.random() * 160);
+      }
+
+      updateHud();
+    }
+
+    function updateHud() {
+      scoreEl.textContent = String(state.score);
+      distanceEl.textContent = String(Math.floor(state.distance));
+      bestEl.textContent = String(state.best);
+      speedEl.textContent = String(Math.round(state.speed * 12));
+    }
+
+    function spawnCar(x) {
+      state.cars.push({
+        x,
+        y: GROUND_Y - 18,
+        w: 92,
+        h: 34,
+        crushed: false,
+        color: ["#ef4444", "#60a5fa", "#f59e0b", "#a78bfa"][Math.floor(Math.random() * 4)]
+      });
+    }
+
+    function spawnRamp(x) {
+      state.ramps.push({
+        x,
+        y: GROUND_Y + 8,
+        w: 112,
+        h: 40
+      });
+    }
+
+    function startGame() {
+      unlockAudio();
+      resetGame();
+      state.running = true;
+      startOverlay.classList.add("hidden");
+      endOverlay.classList.add("hidden");
+      cancelAnimationFrame(state.animationFrame);
+      playSound("start");
+      lastTime = 0;
+      loop();
+    }
+
+    function finishGame() {
+      state.running = false;
+      state.paused = false;
+      if (state.score > state.best) {
+        state.best = state.score;
+        localStorage.setItem(BEST_KEY, String(state.best));
+      }
+      updateHud();
+      endTitle.textContent = state.score >= 10 ? "Zombie Victory!" : "Smash Complete!";
+      endText.textContent = `You crushed ${state.score} cars and drove ${Math.floor(state.distance)} meters.`;
+      endOverlay.classList.remove("hidden");
+      pauseBtn.textContent = "Pause";
+    }
+
+    function togglePause() {
+      if (!state.running) return;
+      state.paused = !state.paused;
+      pauseBtn.textContent = state.paused ? "Resume" : "Pause";
+      if (!state.paused) {
+        lastTime = 0;
+        cancelAnimationFrame(state.animationFrame);
+        loop();
+      } else {
+        draw();
+      }
+    }
+
+    function addBurst(x, y, color, count) {
+      for (let i = 0; i < count; i += 1) {
+        state.particles.push({
+          x,
+          y,
+          vx: (Math.random() - 0.5) * 8,
+          vy: (Math.random() - 0.5) * 6 - 1,
+          life: 18 + Math.random() * 16,
+          color
+        });
+      }
+    }
+
+    function jumpTruck() {
+      if (!state.truck.onGround) return;
+      unlockAudio();
+      state.truck.vy = -11.5;
+      state.truck.onGround = false;
+      state.truck.angle = -0.24;
+      playSound("jump");
+    }
+
+    function updateParticles() {
+      for (const p of state.particles) {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.18;
+        p.life -= 1;
+      }
+      state.particles = state.particles.filter((p) => p.life > 0);
+    }
+
+    function update(dt) {
+      if (!state.running) {
+        updateParticles();
+        return;
+      }
+
+      if (state.paused) {
+        return;
+      }
+
+      if (controls.left) {
+        state.speed = Math.max(2.6, state.speed - 0.08);
+      }
+      if (controls.right) {
+        state.speed = Math.min(8.4, state.speed + 0.12);
+      }
+
+      state.speed += 0.01;
+      state.speed = Math.min(8.8, state.speed);
+      state.distance += state.speed * dt * 55;
+      state.worldOffset += state.speed * dt * 220;
+
+      state.truck.x += state.truck.vx;
+      state.truck.vy += 0.58;
+      state.truck.y += state.truck.vy;
+
+      let groundY = GROUND_Y - 40;
+
+      for (const ramp of state.ramps) {
+        const rx = ramp.x - state.worldOffset + 220;
+        if (rx > 110 && rx < 280) {
+          const localX = rx - 110;
+          const rampTop = GROUND_Y - 8 - (localX / ramp.w) * 54;
+          groundY = Math.min(groundY, rampTop);
+          if (state.truck.onGround) {
+            state.truck.angle = -0.18;
+          }
+        }
+      }
+
+      if (state.truck.y >= groundY) {
+        if (!state.truck.onGround && state.truck.vy > 2) {
+          playSound("land");
+          addBurst(state.truck.x, groundY + 34, "#d9f99d", 8);
+        }
+        state.truck.y = groundY;
+        state.truck.vy = 0;
+        state.truck.onGround = true;
+        state.truck.angle *= 0.82;
+      } else {
+        state.truck.onGround = false;
+        state.truck.angle += 0.015;
+      }
+
+      for (const car of state.cars) {
+        const screenX = car.x - state.worldOffset + 220;
+        if (!car.crushed && screenX < 285 && screenX + car.w > 150) {
+          const truckBottom = state.truck.y + 84;
+          if (truckBottom > car.y - 18 && state.truck.y + 30 < car.y + car.h && state.truck.vy >= 0) {
+            car.crushed = true;
+            state.score += 1;
+            state.truck.vy = -4.2;
+            state.truck.crushGlow = 10;
+            addBurst(screenX + car.w / 2, car.y, "#fb923c", 18);
+            playSound("crush");
+            updateHud();
+          }
+        }
+      }
+
+      for (const car of state.cars) {
+        if (car.x - state.worldOffset < -260) {
+          car.x += 2200 + Math.random() * 700;
+          car.crushed = false;
+          car.color = ["#ef4444", "#60a5fa", "#f59e0b", "#a78bfa"][Math.floor(Math.random() * 4)];
+        }
+      }
+
+      for (const ramp of state.ramps) {
+        if (ramp.x - state.worldOffset < -300) {
+          ramp.x += 2400 + Math.random() * 800;
+        }
+      }
+
+      if (state.truck.crushGlow > 0) {
+        state.truck.crushGlow -= 1;
+      }
+
+      updateParticles();
+      updateHud();
+
+      if (state.distance >= 1200) {
+        finishGame();
+      }
+    }
+
+    function drawBackground() {
+      const sky = ctx.createLinearGradient(0, 0, 0, HEIGHT);
+      sky.addColorStop(0, "#111827");
+      sky.addColorStop(0.5, "#312e81");
+      sky.addColorStop(1, "#7c2d12");
+      ctx.fillStyle = sky;
+      ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+      ctx.fillStyle = "rgba(190,242,100,0.18)";
+      ctx.fillRect(0, 130, WIDTH, 120);
+
+      ctx.fillStyle = "#fef08a";
+      ctx.beginPath();
+      ctx.arc(WIDTH - 120, 110, 34, 0, Math.PI * 2);
+      ctx.fill();
+
+      for (let i = 0; i < 6; i += 1) {
+        const x = ((i * 220 - state.worldOffset * 0.15) % (WIDTH + 180)) - 80;
+        ctx.fillStyle = "rgba(255,255,255,0.2)";
+        ctx.beginPath();
+        ctx.arc(x, 90 + (i % 2) * 20, 24, Math.PI, 0);
+        ctx.arc(x + 20, 80 + (i % 2) * 20, 18, Math.PI, 0);
+        ctx.arc(x + 44, 90 + (i % 2) * 20, 22, Math.PI, 0);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      ctx.fillStyle = "#1f2937";
+      for (let i = 0; i < 8; i += 1) {
+        const x = ((i * 160 - state.worldOffset * 0.35) % (WIDTH + 120)) - 60;
+        ctx.fillRect(x, 190, 24, 160);
+        ctx.beginPath();
+        ctx.arc(x + 12, 180, 36, Math.PI, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function drawGround() {
+      const ground = ctx.createLinearGradient(0, GROUND_Y, 0, HEIGHT);
+      ground.addColorStop(0, "#4d7c0f");
+      ground.addColorStop(1, "#1f3b08");
+      ctx.fillStyle = ground;
+      ctx.fillRect(0, GROUND_Y, WIDTH, HEIGHT - GROUND_Y);
+
+      ctx.fillStyle = "#365314";
+      for (let i = 0; i < 20; i += 1) {
+        const x = ((i * 64 - state.worldOffset) % (WIDTH + 80)) - 40;
+        ctx.fillRect(x, GROUND_Y + 28, 30, 8);
+      }
+    }
+
+    function drawRamp(ramp) {
+      const x = ramp.x - state.worldOffset + 220;
+      ctx.save();
+      ctx.translate(x, ramp.y);
+      ctx.fillStyle = "#94a3b8";
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(ramp.w, 0);
+      ctx.lineTo(0, -ramp.h);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = "#e2e8f0";
+      ctx.fillRect(0, -8, ramp.w, 8);
+      ctx.restore();
+    }
+
+    function drawCar(car) {
+      const x = car.x - state.worldOffset + 220;
+      const squash = car.crushed ? 0.35 : 1;
+      ctx.save();
+      ctx.translate(x, car.y);
+      ctx.scale(1, squash);
+      ctx.fillStyle = car.color;
+      ctx.beginPath();
+      ctx.roundRect(0, -car.h, car.w, car.h, 10);
+      ctx.fill();
+      ctx.fillStyle = "white";
+      ctx.fillRect(18, -26, 22, 10);
+      ctx.fillRect(50, -26, 22, 10);
+      ctx.fillStyle = "#111827";
+      ctx.fillRect(10, -6, 14, 10);
+      ctx.fillRect(68, -6, 14, 10);
+      ctx.restore();
+    }
+
+    function drawTruck() {
+      const x = state.truck.x;
+      const y = state.truck.y;
+
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(state.truck.angle);
+
+      if (state.truck.crushGlow > 0) {
+        ctx.fillStyle = "rgba(190,242,100,0.35)";
+        ctx.beginPath();
+        ctx.ellipse(0, 20, 92, 44, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.fillStyle = "#65a30d";
+      ctx.beginPath();
+      ctx.roundRect(-68, -56, 136, 72, 22);
+      ctx.fill();
+
+      ctx.fillStyle = "#84cc16";
+      ctx.beginPath();
+      ctx.moveTo(-28, -56);
+      ctx.lineTo(8, -84);
+      ctx.lineTo(38, -56);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = "#111827";
+      ctx.beginPath();
+      ctx.roundRect(-18, -34, 52, 26, 10);
+      ctx.fill();
+
+      ctx.fillStyle = "#dcfce7";
+      ctx.fillRect(-10, -28, 18, 14);
+      ctx.fillRect(12, -28, 18, 14);
+
+      ctx.fillStyle = "#bef264";
+      ctx.beginPath();
+      ctx.arc(-26, -18, 11, 0, Math.PI * 2);
+      ctx.arc(46, -18, 11, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#1a2e05";
+      ctx.fillRect(-58, 4, 116, 16);
+
+      ctx.strokeStyle = "#f8fafc";
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(54, -44);
+      ctx.lineTo(72, -68);
+      ctx.moveTo(-44, -44);
+      ctx.lineTo(-62, -68);
+      ctx.stroke();
+
+      ctx.fillStyle = "#111827";
+      ctx.beginPath();
+      ctx.arc(-48, 34, 28, 0, Math.PI * 2);
+      ctx.arc(48, 34, 28, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#475569";
+      ctx.beginPath();
+      ctx.arc(-48, 34, 16, 0, Math.PI * 2);
+      ctx.arc(48, 34, 16, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    function drawParticles() {
+      for (const p of state.particles) {
+        ctx.globalAlpha = Math.max(0.1, p.life / 32);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(p.x, p.y, 5, 5);
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    function drawProgress() {
+      ctx.fillStyle = "rgba(15,23,42,0.22)";
+      ctx.fillRect(20, HEIGHT - 36, WIDTH - 40, 16);
+      const grad = ctx.createLinearGradient(20, 0, WIDTH - 20, 0);
+      grad.addColorStop(0, "#84cc16");
+      grad.addColorStop(0.5, "#facc15");
+      grad.addColorStop(1, "#fb923c");
+      ctx.fillStyle = grad;
+      ctx.fillRect(20, HEIGHT - 36, ((WIDTH - 40) * state.distance) / 1200, 16);
+    }
+
+    function draw() {
+      drawBackground();
+      drawGround();
+
+      for (const ramp of state.ramps) {
+        drawRamp(ramp);
+      }
+
+      for (const car of state.cars) {
+        drawCar(car);
+      }
+
+      drawTruck();
+      drawParticles();
+      drawProgress();
+
+      if (state.paused) {
+        ctx.fillStyle = "rgba(15,23,42,0.4)";
+        ctx.fillRect(0, 0, WIDTH, HEIGHT);
+        ctx.fillStyle = "#ffffff";
+        ctx.textAlign = "center";
+        ctx.font = "bold 46px Trebuchet MS";
+        ctx.fillText("PAUSED", WIDTH / 2, HEIGHT / 2);
+      }
+    }
+
+    let lastTime = 0;
+    function loop(timestamp = 0) {
+      const dt = Math.min(0.035, (timestamp - lastTime) / 1000 || 0.016);
+      lastTime = timestamp;
+      update(dt);
+      draw();
+      if (state.running || state.particles.length > 0) {
+        if (!state.paused || state.particles.length > 0) {
+          state.animationFrame = requestAnimationFrame(loop);
+        }
+      }
+    }
+
+    function setControl(name, value) {
+      controls[name] = value;
+      if (name === "jump" && value) {
+        jumpTruck();
+      }
+    }
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "ArrowLeft") setControl("left", true);
+      if (event.key === "ArrowRight") setControl("right", true);
+      if (event.key === " ") {
+        event.preventDefault();
+        setControl("jump", true);
+      }
+      if (event.key.toLowerCase() === "p") {
+        event.preventDefault();
+        togglePause();
+      }
+    });
+
+    document.addEventListener("keyup", (event) => {
+      if (event.key === "ArrowLeft") setControl("left", false);
+      if (event.key === "ArrowRight") setControl("right", false);
+      if (event.key === " ") setControl("jump", false);
+    });
+
+    function bindButton(button, controlName) {
+      const press = (event) => {
+        event.preventDefault();
+        unlockAudio();
+        setControl(controlName, true);
+      };
+      const release = (event) => {
+        event.preventDefault();
+        if (controlName !== "jump") {
+          setControl(controlName, false);
+        }
+      };
+      button.addEventListener("pointerdown", press);
+      button.addEventListener("pointerup", release);
+      button.addEventListener("pointerleave", release);
+      button.addEventListener("pointercancel", release);
+    }
+
+    bindButton(leftBtn, "left");
+    bindButton(rightBtn, "right");
+    bindButton(jumpBtn, "jump");
+    pauseBtn.addEventListener("click", togglePause);
+
+    startBtn.addEventListener("click", startGame);
+    restartBtn.addEventListener("click", startGame);
+
+    initWorld();
+    resetGame();
+    draw();
+  </script>
+</body>
+</html>
