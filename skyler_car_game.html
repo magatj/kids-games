@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spidey Car Adventure</title>
+  <style>
+    :root {
+      --sky-top: #1a2a6c;
+      --sky-bottom: #b21f1f;
+      --hero-red: #d61f26;
+      --hero-blue: #1b4ed1;
+      --hero-yellow: #ffd447;
+      --ink: #13203a;
+      --road: #35363c;
+      --road-line: #fff4be;
+      --panel-bg: rgba(255, 255, 255, 0.92);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Trebuchet MS", "Arial Rounded MT Bold", sans-serif;
+      color: white;
+      background:
+        radial-gradient(circle at top, rgba(255, 255, 255, 0.22), transparent 30%),
+        linear-gradient(180deg, var(--sky-top), var(--sky-bottom) 55%, #0e1830);
+    }
+
+    .game-shell {
+      width: min(100%, 980px);
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+    }
+
+    .logo {
+      width: 84px;
+      height: 84px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      background:
+        radial-gradient(circle, #ffffff 0 12%, transparent 13%),
+        repeating-radial-gradient(circle, rgba(255, 255, 255, 0.12) 0 8px, transparent 8px 15px),
+        linear-gradient(180deg, var(--hero-red), #8d0812);
+      border: 5px solid white;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+    }
+
+    .brand h1,
+    .brand p {
+      margin: 0;
+    }
+
+    .brand h1 {
+      font-size: clamp(1.8rem, 3vw, 2.5rem);
+    }
+
+    .brand p {
+      color: #eff3ff;
+    }
+
+    .scoreboard {
+      display: flex;
+      gap: 12px;
+    }
+
+    .score-card {
+      min-width: 92px;
+      padding: 10px 14px;
+      border-radius: 18px;
+      text-align: center;
+      background: rgba(7, 18, 52, 0.5);
+      border: 2px solid rgba(255, 255, 255, 0.22);
+    }
+
+    .score-card .label {
+      display: block;
+      font-size: 0.85rem;
+    }
+
+    .score-card strong {
+      font-size: 2rem;
+      color: var(--hero-yellow);
+    }
+
+    .game-area {
+      position: relative;
+      width: min(100%, 420px);
+      margin: 0 auto;
+    }
+
+    #gameCanvas {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 28px;
+      border: 6px solid white;
+      box-shadow: 0 18px 48px rgba(0, 0, 0, 0.33);
+      background: #87ceeb;
+      touch-action: none;
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+    }
+
+    .overlay.hidden {
+      display: none;
+    }
+
+    .panel {
+      width: min(100%, 320px);
+      text-align: center;
+      background: var(--panel-bg);
+      color: var(--ink);
+      border-radius: 28px;
+      padding: 24px 20px;
+      border: 5px solid white;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.24);
+    }
+
+    .panel h2 {
+      margin-top: 0;
+      margin-bottom: 12px;
+      font-size: 2rem;
+    }
+
+    .panel p {
+      font-size: 1.1rem;
+      margin: 10px 0;
+    }
+
+    .big-button,
+    .control-button {
+      border: 0;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      transition: transform 120ms ease, filter 120ms ease;
+    }
+
+    .big-button:hover,
+    .control-button:hover,
+    .big-button:active,
+    .control-button:active {
+      transform: scale(1.03);
+      filter: brightness(1.05);
+    }
+
+    .big-button {
+      margin-top: 10px;
+      padding: 16px 28px;
+      font-size: 1.5rem;
+      border-radius: 999px;
+      color: white;
+      background: linear-gradient(180deg, var(--hero-blue), #0d2e8e);
+      box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.18);
+    }
+
+    .help {
+      text-align: center;
+      color: #edf2ff;
+      font-size: 0.98rem;
+      margin-top: 18px;
+    }
+
+    @media (max-width: 560px) {
+      .game-shell {
+        padding: 10px;
+      }
+
+      .logo {
+        width: 68px;
+        height: 68px;
+        font-size: 0.95rem;
+      }
+
+      .scoreboard {
+        width: 100%;
+        justify-content: center;
+      }
+
+    }
+  </style>
+</head>
+<body>
+  <main class="game-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo">SPIDEY</div>
+        <div>
+          <h1>Car Adventure</h1>
+          <p>Easy driving fun for little heroes</p>
+        </div>
+      </div>
+      <div class="scoreboard">
+        <div class="score-card">
+          <span class="label">Stars</span>
+          <strong id="score">0</strong>
+        </div>
+        <div class="score-card">
+          <span class="label">Best</span>
+          <strong id="bestScore">0</strong>
+        </div>
+      </div>
+    </header>
+
+    <section class="game-area">
+      <canvas id="gameCanvas" width="420" height="720" aria-label="Spidey car game"></canvas>
+
+      <div class="overlay" id="startScreen">
+        <div class="panel">
+          <h2>Ready to drive?</h2>
+          <p>Touch and drag the car.</p>
+          <p>Catch shiny stars. Avoid the slow cars.</p>
+          <button id="startButton" class="big-button">Play</button>
+        </div>
+      </div>
+
+      <div class="overlay hidden" id="gameOverScreen">
+        <div class="panel">
+          <h2>Nice driving!</h2>
+          <p id="finalMessage">You got 0 stars!</p>
+          <button id="restartButton" class="big-button">Play Again</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="help">
+      <p>Grown-up tip: open <strong>index.html</strong> in a browser to play.</p>
+      <p>Use a finger or mouse and drag the car left and right.</p>
+    </section>
+  </main>
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const scoreEl = document.getElementById("score");
+    const bestScoreEl = document.getElementById("bestScore");
+    const startScreen = document.getElementById("startScreen");
+    const gameOverScreen = document.getElementById("gameOverScreen");
+    const finalMessage = document.getElementById("finalMessage");
+    const startButton = document.getElementById("startButton");
+    const restartButton = document.getElementById("restartButton");
+
+    const WIDTH = canvas.width;
+    const HEIGHT = canvas.height;
+    const ROAD_WIDTH = 270;
+    const ROAD_X = (WIDTH - ROAD_WIDTH) / 2;
+    const LANE_WIDTH = ROAD_WIDTH / 3;
+
+    const bestKey = "spidey-car-best-score";
+    let bestScore = Number(localStorage.getItem(bestKey) || 0);
+    bestScoreEl.textContent = bestScore;
+
+    const state = {
+      running: false,
+      animationFrame: 0,
+      score: 0,
+      roadOffset: 0,
+      spawnTick: 0,
+      starTick: 0,
+      obstacleSpeed: 2.6,
+      dragging: false,
+      car: {
+        x: WIDTH / 2,
+        y: HEIGHT - 120,
+        width: 72,
+        height: 120
+      },
+      obstacles: [],
+      stars: []
+    };
+
+    let audioContext;
+
+    function resetGame() {
+      state.score = 0;
+      state.roadOffset = 0;
+      state.spawnTick = 0;
+      state.starTick = 0;
+      state.obstacleSpeed = 2.6;
+      state.dragging = false;
+      state.obstacles = [];
+      state.stars = [];
+      state.car.x = WIDTH / 2;
+      updateScore();
+    }
+
+    function updateScore() {
+      scoreEl.textContent = state.score;
+      bestScoreEl.textContent = bestScore;
+    }
+
+    function startGame() {
+      unlockAudio();
+      resetGame();
+      state.running = true;
+      startScreen.classList.add("hidden");
+      gameOverScreen.classList.add("hidden");
+      cancelAnimationFrame(state.animationFrame);
+      playSound("start");
+      loop();
+    }
+
+    function endGame() {
+      state.running = false;
+      if (state.score > bestScore) {
+        bestScore = state.score;
+        localStorage.setItem(bestKey, String(bestScore));
+      }
+      updateScore();
+      finalMessage.textContent = `You got ${state.score} stars!`;
+      gameOverScreen.classList.remove("hidden");
+      playSound("crash");
+    }
+
+    function laneCenter(laneIndex) {
+      return ROAD_X + LANE_WIDTH * laneIndex + LANE_WIDTH / 2;
+    }
+
+    function spawnObstacle() {
+      const lane = Math.floor(Math.random() * 3);
+      state.obstacles.push({
+        x: laneCenter(lane),
+        y: -140,
+        width: 62,
+        height: 104,
+        color: lane === 1 ? "#ffd447" : "#e5ecff"
+      });
+    }
+
+    function spawnStar() {
+      const lane = Math.floor(Math.random() * 3);
+      state.stars.push({
+        x: laneCenter(lane),
+        y: -60,
+        size: 24
+      });
+    }
+
+    function circleRectHit(circle, rect) {
+      const closestX = Math.max(rect.x - rect.width / 2, Math.min(circle.x, rect.x + rect.width / 2));
+      const closestY = Math.max(rect.y - rect.height / 2, Math.min(circle.y, rect.y + rect.height / 2));
+      const dx = circle.x - closestX;
+      const dy = circle.y - closestY;
+      return dx * dx + dy * dy < circle.size * circle.size;
+    }
+
+    function rectHit(a, b) {
+      return (
+        Math.abs(a.x - b.x) * 2 < a.width + b.width &&
+        Math.abs(a.y - b.y) * 2 < a.height + b.height
+      );
+    }
+
+    function update() {
+      if (!state.running) {
+        return;
+      }
+
+      state.roadOffset += 8;
+      state.spawnTick += 1;
+      state.starTick += 1;
+
+      const halfCar = state.car.width / 2;
+      state.car.x = Math.max(ROAD_X + halfCar + 10, Math.min(ROAD_X + ROAD_WIDTH - halfCar - 10, state.car.x));
+
+      if (state.spawnTick > 80) {
+        spawnObstacle();
+        state.spawnTick = 0;
+      }
+
+      if (state.starTick > 55) {
+        spawnStar();
+        state.starTick = 0;
+      }
+
+      state.obstacleSpeed = Math.min(4.4, 2.6 + state.score * 0.03);
+
+      for (const obstacle of state.obstacles) {
+        obstacle.y += state.obstacleSpeed;
+        if (rectHit(state.car, obstacle)) {
+          endGame();
+          return;
+        }
+      }
+
+      for (const star of state.stars) {
+        star.y += 3.4;
+        if (circleRectHit(star, state.car)) {
+          state.score += 1;
+          updateScore();
+          star.hit = true;
+          playSound("star");
+        }
+      }
+
+      state.obstacles = state.obstacles.filter((obstacle) => obstacle.y < HEIGHT + 150);
+      state.stars = state.stars.filter((star) => !star.hit && star.y < HEIGHT + 80);
+    }
+
+    function drawBackground() {
+      const sky = ctx.createLinearGradient(0, 0, 0, HEIGHT);
+      sky.addColorStop(0, "#66c7ff");
+      sky.addColorStop(1, "#b4ecff");
+      ctx.fillStyle = sky;
+      ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+      ctx.fillStyle = "#8fd275";
+      ctx.fillRect(0, 0, ROAD_X, HEIGHT);
+      ctx.fillRect(ROAD_X + ROAD_WIDTH, 0, WIDTH - (ROAD_X + ROAD_WIDTH), HEIGHT);
+
+      ctx.fillStyle = "#7dbaff";
+      ctx.fillRect(24, 90, 78, 220);
+      ctx.fillRect(320, 60, 72, 250);
+      ctx.fillRect(16, 340, 92, 180);
+      ctx.fillRect(312, 390, 84, 220);
+
+      ctx.fillStyle = "#2d3440";
+      ctx.fillRect(ROAD_X, 0, ROAD_WIDTH, HEIGHT);
+
+      ctx.strokeStyle = "#fff4be";
+      ctx.lineWidth = 8;
+      ctx.setLineDash([34, 28]);
+
+      for (let i = 1; i <= 2; i += 1) {
+        const x = ROAD_X + LANE_WIDTH * i;
+        ctx.beginPath();
+        ctx.moveTo(x, -80 + (state.roadOffset % 62));
+        ctx.lineTo(x, HEIGHT + 80);
+        ctx.stroke();
+      }
+
+      ctx.setLineDash([]);
+    }
+
+    function drawWeb(x, y, radius) {
+      ctx.save();
+      ctx.strokeStyle = "rgba(255,255,255,0.55)";
+      ctx.lineWidth = 1.5;
+
+      for (let i = 0; i < 6; i += 1) {
+        const angle = (Math.PI * 2 * i) / 6;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + Math.cos(angle) * radius, y + Math.sin(angle) * radius);
+        ctx.stroke();
+      }
+
+      for (let ring = 1; ring <= 3; ring += 1) {
+        ctx.beginPath();
+        ctx.arc(x, y, (radius / 3) * ring, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawHeroCar(car) {
+      ctx.save();
+      ctx.translate(car.x, car.y);
+
+      drawWeb(0, -8, 28);
+
+      ctx.fillStyle = "#d61f26";
+      ctx.beginPath();
+      ctx.roundRect(-36, -52, 72, 104, 24);
+      ctx.fill();
+
+      ctx.fillStyle = "#1b4ed1";
+      ctx.beginPath();
+      ctx.roundRect(-26, -16, 52, 46, 16);
+      ctx.fill();
+
+      ctx.fillStyle = "white";
+      ctx.beginPath();
+      ctx.ellipse(-12, -20, 10, 14, -0.3, 0, Math.PI * 2);
+      ctx.ellipse(12, -20, 10, 14, 0.3, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#111";
+      ctx.fillRect(-23, 32, 16, 30);
+      ctx.fillRect(7, 32, 16, 30);
+
+      ctx.restore();
+    }
+
+    function drawObstacle(obstacle) {
+      ctx.save();
+      ctx.translate(obstacle.x, obstacle.y);
+
+      ctx.fillStyle = obstacle.color;
+      ctx.beginPath();
+      ctx.roundRect(-31, -45, 62, 90, 16);
+      ctx.fill();
+
+      ctx.fillStyle = "#3b4659";
+      ctx.fillRect(-22, -10, 44, 22);
+
+      ctx.fillStyle = "#111";
+      ctx.fillRect(-25, 25, 14, 24);
+      ctx.fillRect(11, 25, 14, 24);
+
+      ctx.restore();
+    }
+
+    function drawStar(star) {
+      ctx.save();
+      ctx.translate(star.x, star.y);
+      ctx.fillStyle = "#ffd447";
+      ctx.strokeStyle = "#ff9f1c";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+
+      for (let i = 0; i < 5; i += 1) {
+        const outerAngle = -Math.PI / 2 + (i * Math.PI * 2) / 5;
+        const innerAngle = outerAngle + Math.PI / 5;
+        const outerX = Math.cos(outerAngle) * star.size;
+        const outerY = Math.sin(outerAngle) * star.size;
+        const innerX = Math.cos(innerAngle) * (star.size * 0.45);
+        const innerY = Math.sin(innerAngle) * (star.size * 0.45);
+
+        if (i === 0) {
+          ctx.moveTo(outerX, outerY);
+        } else {
+          ctx.lineTo(outerX, outerY);
+        }
+        ctx.lineTo(innerX, innerY);
+      }
+
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function draw() {
+      drawBackground();
+
+      for (const star of state.stars) {
+        drawStar(star);
+      }
+
+      for (const obstacle of state.obstacles) {
+        drawObstacle(obstacle);
+      }
+
+      drawHeroCar(state.car);
+    }
+
+    function loop() {
+      update();
+      draw();
+
+      if (state.running) {
+        state.animationFrame = requestAnimationFrame(loop);
+      }
+    }
+
+    function unlockAudio() {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioContext.state === "suspended") {
+        audioContext.resume();
+      }
+    }
+
+    function playTone(frequency, duration, type, volume) {
+      if (!audioContext) {
+        return;
+      }
+
+      const now = audioContext.currentTime;
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+
+      oscillator.type = type;
+      oscillator.frequency.setValueAtTime(frequency, now);
+      gainNode.gain.setValueAtTime(volume, now);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+
+      oscillator.start(now);
+      oscillator.stop(now + duration);
+    }
+
+    function playSound(kind) {
+      if (!audioContext) {
+        return;
+      }
+
+      if (kind === "start") {
+        playTone(523.25, 0.14, "triangle", 0.08);
+        setTimeout(() => playTone(659.25, 0.16, "triangle", 0.07), 90);
+      }
+
+      if (kind === "star") {
+        playTone(880, 0.12, "sine", 0.06);
+        setTimeout(() => playTone(1174.66, 0.16, "sine", 0.05), 60);
+      }
+
+      if (kind === "crash") {
+        playTone(180, 0.25, "sawtooth", 0.07);
+        setTimeout(() => playTone(120, 0.3, "sawtooth", 0.05), 70);
+      }
+    }
+
+    function getCanvasX(event) {
+      const rect = canvas.getBoundingClientRect();
+      const scale = WIDTH / rect.width;
+      return (event.clientX - rect.left) * scale;
+    }
+
+    function moveCarTo(pointerX) {
+      state.car.x = pointerX;
+    }
+
+    canvas.addEventListener("pointerdown", (event) => {
+      unlockAudio();
+      state.dragging = true;
+      canvas.setPointerCapture(event.pointerId);
+      moveCarTo(getCanvasX(event));
+    });
+
+    canvas.addEventListener("pointermove", (event) => {
+      if (!state.dragging) {
+        return;
+      }
+      moveCarTo(getCanvasX(event));
+    });
+
+    function stopDragging() {
+      state.dragging = false;
+    }
+
+    canvas.addEventListener("pointerup", stopDragging);
+    canvas.addEventListener("pointercancel", stopDragging);
+    canvas.addEventListener("pointerleave", stopDragging);
+
+    startButton.addEventListener("click", startGame);
+    restartButton.addEventListener("click", startGame);
+
+    draw();
+  </script>
+</body>
+</html>
