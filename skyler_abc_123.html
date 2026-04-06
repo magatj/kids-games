@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Skyler's Superhero ABC & 123!</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* Use dvh so the browser toolbar is excluded from the height calculation */
+html, body {
+  height: 100%; height: 100dvh;
+  overflow: hidden;
+}
+
+body {
+  font-family: 'Comic Sans MS', 'Chalkboard SE', 'Arial Rounded MT Bold', Arial, sans-serif;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Dark city night sky */
+.bg {
+  position: fixed; inset: 0;
+  background: linear-gradient(180deg, #04040f 0%, #0b1030 40%, #1a0510 75%, #2a0505 100%);
+  background-size: 200% 200%;
+  animation: bgShift 10s ease infinite;
+  z-index: 0;
+}
+@keyframes bgShift {
+  0%,100% { background-position: 50% 0%; }
+  50%      { background-position: 50% 100%; }
+}
+
+/* Red spider-web glow at top */
+.bg::after {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 80% 40% at 50% 0%,   rgba(180,0,0,0.45) 0%, transparent 65%),
+    radial-gradient(ellipse 60% 30% at 50% 100%,  rgba(10,20,100,0.5) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+/* SVG spider-web tile overlay */
+.web-overlay {
+  position: fixed; inset: 0; z-index: 1; pointer-events: none; opacity: 0.07;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Ccircle cx='100' cy='100' r='20'  fill='none' stroke='white' stroke-width='1'/%3E%3Ccircle cx='100' cy='100' r='45'  fill='none' stroke='white' stroke-width='1'/%3E%3Ccircle cx='100' cy='100' r='75'  fill='none' stroke='white' stroke-width='1'/%3E%3Ccircle cx='100' cy='100' r='100' fill='none' stroke='white' stroke-width='1'/%3E%3Cline x1='100' y1='0'   x2='100' y2='200' stroke='white' stroke-width='0.8'/%3E%3Cline x1='0'   y1='100' x2='200' y2='100' stroke='white' stroke-width='0.8'/%3E%3Cline x1='15'  y1='15'  x2='185' y2='185' stroke='white' stroke-width='0.8'/%3E%3Cline x1='185' y1='15'  x2='15'  y2='185' stroke='white' stroke-width='0.8'/%3E%3Cline x1='58'  y1='0'   x2='142' y2='200' stroke='white' stroke-width='0.5'/%3E%3Cline x1='142' y1='0'   x2='58'  y2='200' stroke='white' stroke-width='0.5'/%3E%3Cline x1='0'   y1='58'  x2='200' y2='142' stroke='white' stroke-width='0.5'/%3E%3Cline x1='0'   y1='142' x2='200' y2='58'  stroke='white' stroke-width='0.5'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
+}
+
+/* City skyline silhouette at bottom */
+.city {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  height: 90px; z-index: 2; pointer-events: none;
+  background:
+    linear-gradient(transparent 0%, rgba(0,0,0,0.7) 100%);
+}
+.city::before {
+  content: '';
+  position: absolute; bottom: 0; left: 0; right: 0; height: 70px;
+  background: #05050f;
+  clip-path: polygon(
+    0%   100%, 0%   55%, 3%   55%, 3%   35%, 6%   35%, 6%   55%,
+    9%   55%, 9%   20%, 11%  20%, 11%  40%, 13%  40%, 13%  55%,
+    15%  55%, 15%  30%, 18%  30%, 18%  10%, 20%  10%, 20%  30%,
+    22%  30%, 22%  55%, 25%  55%, 25%  38%, 27%  38%, 27%  55%,
+    30%  55%, 30%  22%, 33%  22%, 33%  40%, 35%  40%, 35%  55%,
+    38%  55%, 38%  15%, 40%  15%, 40%  35%, 43%  35%, 43%  55%,
+    46%  55%, 46%  28%, 49%  28%, 49%  55%, 52%  55%, 52%  18%,
+    54%  18%, 54%  38%, 57%  38%, 57%  55%, 60%  55%, 60%  32%,
+    62%  32%, 62%  55%, 65%  55%, 65%  20%, 67%  20%, 67%  42%,
+    70%  42%, 70%  55%, 73%  55%, 73%  28%, 76%  28%, 76%  55%,
+    78%  55%, 78%  38%, 80%  38%, 80%  15%, 83%  15%, 83%  38%,
+    85%  38%, 85%  55%, 88%  55%, 88%  24%, 90%  24%, 90%  55%,
+    93%  55%, 93%  35%, 96%  35%, 96%  55%, 98%  55%, 98%  42%,
+    100% 42%, 100% 100%
+  );
+}
+
+/* Floating background decorations */
+.float-deco {
+  position: fixed;
+  animation: floatUp linear infinite;
+  z-index: 1; pointer-events: none;
+}
+@keyframes floatUp {
+  from { transform: translateY(110vh) rotate(0deg); opacity: 0; }
+  8%   { opacity: 0.45; }
+  92%  { opacity: 0.45; }
+  to   { transform: translateY(-12vh) rotate(400deg); opacity: 0; }
+}
+
+/* ── START SCREEN ── */
+.start-screen {
+  position: fixed; inset: 0; z-index: 50;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 18px;
+  padding: 24px 24px calc(24px + env(safe-area-inset-bottom, 0px)) 24px;
+}
+.start-screen h1 {
+  font-size: clamp(30px, 8vw, 58px);
+  color: white;
+  text-shadow: 3px 4px 0 rgba(0,0,0,0.15);
+  text-align: center; line-height: 1.2;
+}
+.start-screen p {
+  font-size: clamp(17px, 4vw, 26px);
+  color: rgba(255,255,255,0.95);
+  text-align: center;
+  text-shadow: 1px 2px 0 rgba(0,0,0,0.1);
+}
+.start-btn {
+  padding: 20px 58px;
+  font-size: clamp(22px, 5vw, 34px);
+  border-radius: 60px; border: none;
+  background: linear-gradient(135deg, #dc143c, #8b0000);
+  color: white;
+  font-family: inherit; font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 8px 28px rgba(180,0,0,0.5);
+  animation: pulse 1.6s ease infinite;
+}
+@keyframes pulse {
+  0%,100% { transform: scale(1);    box-shadow: 0 8px 28px rgba(180,0,0,0.45); }
+  50%      { transform: scale(1.07); box-shadow: 0 14px 38px rgba(180,0,0,0.65); }
+}
+
+/* ── GAME LAYOUT ── */
+.game-wrap {
+  position: relative; z-index: 10;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: space-between;
+  /* dvh = dynamic viewport height, excludes browser chrome on tablets */
+  height: 100dvh;
+  /* padding-bottom leaves room above the city skyline */
+  padding: 10px 12px calc(100px + env(safe-area-inset-bottom, 0px)) 12px;
+  gap: 6px;
+  overflow: hidden;
+}
+
+/* Header */
+.header {
+  width: 100%; max-width: 600px;
+  background: rgba(10,10,30,0.88);
+  border: 2px solid rgba(220,20,60,0.5);
+  border-radius: 18px; padding: 7px 20px;
+  box-shadow: 0 4px 18px rgba(180,0,0,0.25);
+  text-align: center;
+  flex-shrink: 0;
+}
+.header h2 {
+  font-size: clamp(18px, 4.5vw, 26px);
+  color: #ff4455;
+  text-shadow: 0 0 14px rgba(220,20,60,0.6);
+}
+.stars-row {
+  display: flex; justify-content: center;
+  gap: 4px; margin-top: 4px; flex-wrap: wrap;
+}
+.star-slot { font-size: clamp(16px, 3.5vw, 22px); transition: transform 0.3s; }
+.star-slot.pop { animation: starPop 0.45s ease; }
+@keyframes starPop {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.8); }
+  100% { transform: scale(1); }
+}
+
+/* Mode tabs */
+.tabs {
+  display: flex; gap: 8px;
+  background: rgba(10,10,30,0.75);
+  border: 1.5px solid rgba(220,20,60,0.35);
+  border-radius: 50px; padding: 5px;
+}
+.tab {
+  padding: 8px 18px; border-radius: 50px;
+  border: none; font-family: inherit;
+  font-size: clamp(13px, 3vw, 17px);
+  font-weight: 700; cursor: pointer;
+  color: rgba(255,255,255,0.55); background: transparent;
+  transition: all 0.2s;
+}
+.tab.active {
+  background: linear-gradient(135deg, #dc143c, #8b0000);
+  color: white;
+  box-shadow: 0 3px 14px rgba(180,0,0,0.5);
+}
+
+/* Main card */
+.card-area {
+  flex: 1; display: flex;
+  align-items: center; justify-content: center;
+  width: 100%;
+}
+.main-card {
+  background: linear-gradient(160deg, #0d0d2b 0%, #130a1a 100%);
+  border: 3px solid rgba(220,20,60,0.6);
+  border-radius: 28px;
+  padding: 16px 32px 14px;
+  text-align: center;
+  box-shadow: 0 10px 40px rgba(180,0,0,0.35), 0 0 0 4px rgba(220,20,60,0.15), inset 0 0 30px rgba(0,0,80,0.3);
+  animation: cardFloat 2.2s ease-in-out infinite;
+  max-width: 360px; width: 88%;
+  flex-shrink: 0;
+}
+@keyframes cardFloat {
+  0%,100% { transform: translateY(0) rotate(-0.5deg); }
+  50%      { transform: translateY(-12px) rotate(0.5deg); }
+}
+.main-char {
+  font-size: clamp(72px, 16vw, 130px);
+  line-height: 1; font-weight: 900;
+  background: linear-gradient(135deg, var(--c1,#6c5ce7), var(--c2,#fd79a8));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(3px 3px 0 rgba(0,0,0,0.08));
+}
+.main-emoji { font-size: clamp(30px, 6.5vw, 50px); display: block; margin-top: 2px; }
+.main-word  {
+  font-size: clamp(17px, 3.8vw, 22px);
+  color: rgba(255,255,255,0.7); font-weight: 700; margin-top: 2px;
+}
+.num-objects {
+  display: flex; flex-wrap: wrap;
+  justify-content: center; gap: 3px;
+  margin-top: 8px;
+  font-size: clamp(20px, 4.5vw, 30px);
+  min-height: 36px;
+}
+
+/* Speak again */
+.ask-btn {
+  background: rgba(10,10,35,0.9);
+  border: 2px solid rgba(220,20,60,0.6);
+  border-radius: 50px;
+  padding: 9px 22px;
+  font-size: clamp(15px, 3.2vw, 19px);
+  font-family: inherit; font-weight: 700;
+  color: #ff6677; cursor: pointer;
+  box-shadow: 0 3px 14px rgba(180,0,0,0.2);
+  transition: transform 0.15s;
+}
+.ask-btn:active { transform: scale(0.94); }
+
+/* Choice buttons */
+.choices {
+  display: flex; gap: 12px;
+  justify-content: center;
+  width: 100%; max-width: 480px;
+  padding: 0 8px;
+}
+.choice-btn {
+  flex: 1; max-width: 110px; aspect-ratio: 1;
+  border: none; border-radius: 22px;
+  font-size: clamp(32px, 8vw, 58px);
+  font-weight: 900; cursor: pointer;
+  box-shadow: 0 7px 0 rgba(0,0,0,0.14), 0 9px 22px rgba(0,0,0,0.1);
+  color: white;
+  text-shadow: 2px 3px 0 rgba(0,0,0,0.13);
+  font-family: inherit;
+  display: flex; align-items: center; justify-content: center;
+  transition: transform 0.1s, box-shadow 0.1s;
+  position: relative; overflow: hidden;
+}
+.choice-btn:active {
+  transform: translateY(5px);
+  box-shadow: 0 2px 0 rgba(0,0,0,0.14), 0 4px 12px rgba(0,0,0,0.1);
+}
+.choice-btn.shake  { animation: shake 0.42s ease; }
+.choice-btn.pop    { animation: bigPop 0.45s ease; }
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  20%  { transform: translateX(-11px); }
+  40%  { transform: translateX(11px); }
+  60%  { transform: translateX(-8px); }
+  80%  { transform: translateX(8px); }
+}
+@keyframes bigPop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.28); }
+  100% { transform: scale(1); }
+}
+
+/* ── CELEBRATION ── */
+.celebration {
+  position: fixed; inset: 0; z-index: 100;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 14px; padding: 24px;
+  background: rgba(5,5,20,0.96);
+  animation: celebIn 0.35s ease;
+}
+@keyframes celebIn {
+  from { opacity: 0; transform: scale(0.78); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.celebration .big-emoji  { font-size: clamp(60px, 16vw, 90px); }
+.celebration h2 {
+  font-size: clamp(32px, 8vw, 58px);
+  color: #ff3344; text-align: center;
+  text-shadow: 0 0 24px rgba(220,20,60,0.8);
+}
+.celebration p {
+  font-size: clamp(18px, 4.5vw, 28px);
+  color: rgba(255,255,255,0.85); text-align: center;
+}
+.play-again-btn {
+  margin-top: 10px;
+  padding: 18px 52px;
+  font-size: clamp(20px, 4.5vw, 28px);
+  border-radius: 60px; border: none;
+  background: linear-gradient(135deg, #dc143c, #003087);
+  color: white; font-family: inherit; font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 7px 22px rgba(180,0,0,0.5);
+  animation: pulse 1.4s ease infinite;
+}
+
+/* Confetti */
+.confetti {
+  position: fixed; z-index: 200; pointer-events: none;
+  animation: confettiFall linear forwards;
+}
+@keyframes confettiFall {
+  0%   { transform: translateY(-30px) rotate(0deg) scale(1);   opacity: 1; }
+  80%  { opacity: 1; }
+  100% { transform: translateY(108vh) rotate(800deg) scale(0.5); opacity: 0; }
+}
+
+/* Wrong flash overlay on card */
+.main-card.wrong-flash { animation: wrongFlash 0.35s ease, cardFloat 2.2s ease-in-out infinite; }
+@keyframes wrongFlash {
+  0%,100% { border-color: rgba(220,20,60,0.6); }
+  50%      { border-color: rgba(255,80,80,1); box-shadow: 0 0 30px rgba(255,0,0,0.7); }
+}
+
+/* ── LEARN MODE ── */
+.learn-panel {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 10px;
+  width: 100%; max-width: 520px;
+}
+
+/* Sub-toggle inside learn: ABC / 123 */
+.learn-sub-tabs {
+  display: flex; gap: 8px;
+  background: rgba(10,10,30,0.75);
+  border: 1.5px solid rgba(220,20,60,0.35);
+  border-radius: 50px; padding: 4px;
+}
+.learn-sub-tab {
+  padding: 7px 22px; border-radius: 50px;
+  border: none; font-family: inherit;
+  font-size: clamp(14px, 3.2vw, 18px);
+  font-weight: 700; cursor: pointer;
+  color: rgba(255,255,255,0.5); background: transparent;
+  transition: all 0.2s;
+}
+.learn-sub-tab.active {
+  background: linear-gradient(135deg, #003087, #1565c0);
+  color: white;
+  box-shadow: 0 3px 12px rgba(0,50,180,0.5);
+}
+
+/* Sequence strip — all letters/numbers in a row */
+.seq-strip-wrap {
+  width: 100%;
+  overflow-x: auto;
+  padding: 6px 4px;
+  /* hide scrollbar but keep scroll */
+  scrollbar-width: none;
+}
+.seq-strip-wrap::-webkit-scrollbar { display: none; }
+.seq-strip {
+  display: flex; gap: 7px;
+  width: max-content;
+  padding: 0 10px;
+}
+.seq-bub {
+  width: clamp(34px, 7.5vw, 44px);
+  height: clamp(34px, 7.5vw, 44px);
+  border-radius: 50%;
+  border: 1.5px solid rgba(220,20,60,0.3);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: clamp(13px, 2.8vw, 17px);
+  font-weight: 900;
+  background: rgba(10,10,35,0.7);
+  color: rgba(255,255,255,0.6);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  transition: transform 0.2s, background 0.2s;
+  flex-shrink: 0;
+}
+.seq-bub:active  { transform: scale(0.9); }
+.seq-bub.done    { background: rgba(0,48,135,0.45); color: #5599ff; }
+.seq-bub.current {
+  background: linear-gradient(135deg, #dc143c, #8b0000);
+  color: white;
+  box-shadow: 0 4px 14px rgba(180,0,0,0.55);
+  transform: scale(1.18);
+}
+
+/* Position label */
+.learn-pos {
+  font-size: clamp(14px, 3vw, 18px);
+  font-weight: 700;
+  color: #ff6677;
+  text-shadow: 0 0 10px rgba(220,20,60,0.5);
+}
+
+/* Nav row: PREV | AUTO-PLAY | NEXT */
+.nav-row {
+  display: flex; align-items: center;
+  gap: 12px; width: 100%; max-width: 420px;
+  justify-content: center;
+}
+.nav-btn {
+  flex: 1; max-width: 110px;
+  padding: 13px 0;
+  border: none; border-radius: 22px;
+  font-size: clamp(28px, 7vw, 42px);
+  cursor: pointer; font-family: inherit;
+  font-weight: 900; color: white;
+  box-shadow: 0 6px 0 rgba(0,0,0,0.14), 0 8px 18px rgba(0,0,0,0.1);
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+.nav-btn:active {
+  transform: translateY(5px);
+  box-shadow: 0 1px 0 rgba(0,0,0,0.14), 0 3px 10px rgba(0,0,0,0.1);
+}
+.nav-btn.prev { background: linear-gradient(135deg, #003087, #1565c0); }
+.nav-btn.next { background: linear-gradient(135deg, #dc143c, #8b0000); }
+.autoplay-btn {
+  flex: 1.2; max-width: 140px;
+  padding: 13px 0;
+  border: none; border-radius: 22px;
+  font-size: clamp(14px, 3.2vw, 18px);
+  cursor: pointer; font-family: inherit;
+  font-weight: 900; color: white;
+  background: linear-gradient(135deg, #ffd700, #ff8c00);
+  box-shadow: 0 6px 0 rgba(180,120,0,0.4), 0 8px 18px rgba(0,0,0,0.2);
+  transition: transform 0.1s, box-shadow 0.1s;
+  line-height: 1.2;
+  color: #1a0a00;
+}
+.autoplay-btn:active {
+  transform: translateY(5px);
+  box-shadow: 0 1px 0 rgba(180,120,0,0.4), 0 3px 10px rgba(0,0,0,0.2);
+}
+.autoplay-btn.playing {
+  background: linear-gradient(135deg, #dc143c, #8b0000);
+  box-shadow: 0 6px 0 rgba(180,0,0,0.4), 0 8px 18px rgba(0,0,0,0.2);
+  color: white;
+}
+
+/* Speak button inside learn mode */
+.learn-speak-btn {
+  background: rgba(10,10,35,0.9);
+  border: 2px solid rgba(220,20,60,0.55);
+  border-radius: 50px;
+  padding: 8px 20px;
+  font-size: clamp(14px, 3vw, 18px);
+  font-family: inherit; font-weight: 700;
+  color: #ff6677; cursor: pointer;
+  box-shadow: 0 3px 12px rgba(180,0,0,0.2);
+  transition: transform 0.15s;
+}
+.learn-speak-btn:active { transform: scale(0.94); }
+</style>
+</head>
+<body>
+
+<div class="bg"></div>
+<div class="web-overlay"></div>
+<div class="city"></div>
+<div id="decoLayer"></div>
+
+<!-- ── START SCREEN ── -->
+<div id="startScreen" class="start-screen">
+  <div style="font-size:clamp(60px,15vw,90px)">🕷️</div>
+  <h1 style="color:white; text-shadow:0 0 30px rgba(220,20,60,0.9),3px 4px 0 rgba(0,0,0,0.4)">
+    Skyler's Super Hero<br>ABC &amp; 123!
+  </h1>
+  <p style="color:rgba(255,200,200,0.9)">
+    Learn letters &amp; numbers<br>like a superhero! 💥
+  </p>
+  <button class="start-btn" onclick="startGame()">🕸️ Let's Go Hero! ▶</button>
+</div>
+
+<!-- ── MAIN GAME ── -->
+<div id="gameWrap" class="game-wrap" style="display:none">
+
+  <div class="header">
+    <h2>🕷️ Skyler's Super Hero Adventure!</h2>
+    <div class="stars-row" id="starsRow"></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab" id="tabLearn" onclick="setMode('learn')">🕸️ Learn!</button>
+    <button class="tab" id="tabABC"   onclick="setMode('abc')">🔤 ABC</button>
+    <button class="tab" id="tab123"   onclick="setMode('123')">🔢 123</button>
+  </div>
+
+  <div class="card-area">
+    <div class="main-card" id="mainCard">
+      <div class="main-char" id="mainChar">A</div>
+      <span class="main-emoji" id="mainEmoji">🍎</span>
+      <div class="main-word"  id="mainWord">Apple</div>
+      <div class="num-objects" id="numObjects"></div>
+    </div>
+  </div>
+
+  <button class="ask-btn" onclick="askQuestion()">🔊 Ask Again</button>
+
+  <div class="choices" id="choices"></div>
+
+  <!-- ── LEARN PANEL (hidden during quiz) ── -->
+  <div class="learn-panel" id="learnPanel" style="display:none">
+
+    <div class="learn-sub-tabs">
+      <button class="learn-sub-tab active" id="learnTabABC" onclick="learnSetType('abc')">🔤 ABC</button>
+      <button class="learn-sub-tab"        id="learnTab123" onclick="learnSetType('123')">🔢 123</button>
+    </div>
+
+    <div class="seq-strip-wrap" id="seqStripWrap">
+      <div class="seq-strip" id="seqStrip"></div>
+    </div>
+
+    <div class="learn-pos" id="learnPos">A  ·  1 of 26</div>
+
+    <button class="learn-speak-btn" onclick="learnSpeakCurrent()">🔊 Say it again!</button>
+
+    <div class="nav-row">
+      <button class="nav-btn prev" onclick="learnPrev()">◀</button>
+      <button class="autoplay-btn" id="autoplayBtn" onclick="toggleAutoPlay()">▶ Auto Play</button>
+      <button class="nav-btn next" onclick="learnNext()">▶</button>
+    </div>
+
+  </div>
+
+  <div style="height:8px"></div>
+</div>
+
+<!-- ── CELEBRATION ── -->
+<div id="celebration" class="celebration" style="display:none">
+  <div class="big-emoji">🕷️💥🕷️</div>
+  <h2 id="celebTitle">Amazing Skyler!</h2>
+  <p id="celebText">You know all your letters!</p>
+  <button class="play-again-btn" onclick="resetRound()">Play Again! 🎉</button>
+</div>
+
+<script>
+'use strict';
+
+// ── DATA ──────────────────────────────────────────────────────────────────────
+const LETTERS = [
+  {l:'A',emoji:'🍎',word:'Apple'},   {l:'B',emoji:'🐻',word:'Bear'},
+  {l:'C',emoji:'🐱',word:'Cat'},     {l:'D',emoji:'🐶',word:'Dog'},
+  {l:'E',emoji:'🐘',word:'Elephant'},{l:'F',emoji:'🐸',word:'Frog'},
+  {l:'G',emoji:'🍇',word:'Grapes'},  {l:'H',emoji:'🏠',word:'House'},
+  {l:'I',emoji:'🍦',word:'Ice Cream'},{l:'J',emoji:'🌈',word:'Joy'},
+  {l:'K',emoji:'🪁',word:'Kite'},    {l:'L',emoji:'🦁',word:'Lion'},
+  {l:'M',emoji:'🌙',word:'Moon'},    {l:'N',emoji:'⭐',word:'Night'},
+  {l:'O',emoji:'🍊',word:'Orange'},  {l:'P',emoji:'🐧',word:'Penguin'},
+  {l:'Q',emoji:'👸',word:'Queen'},   {l:'R',emoji:'🌹',word:'Rose'},
+  {l:'S',emoji:'🌞',word:'Sun'},     {l:'T',emoji:'🐯',word:'Tiger'},
+  {l:'U',emoji:'☂️',word:'Umbrella'},{l:'V',emoji:'🎻',word:'Violin'},
+  {l:'W',emoji:'🐋',word:'Whale'},   {l:'X',emoji:'🎁',word:'X-mas'},
+  {l:'Y',emoji:'🪀',word:'Yo-yo'},   {l:'Z',emoji:'🦓',word:'Zebra'},
+];
+
+const NUMBERS = [
+  {n:'1', emoji:'⭐', word:'One'},   {n:'2', emoji:'🦋', word:'Two'},
+  {n:'3', emoji:'🌸', word:'Three'}, {n:'4', emoji:'🍀', word:'Four'},
+  {n:'5', emoji:'🌟', word:'Five'},  {n:'6', emoji:'🍬', word:'Six'},
+  {n:'7', emoji:'🌈', word:'Seven'}, {n:'8', emoji:'🎈', word:'Eight'},
+  {n:'9', emoji:'🍭', word:'Nine'},  {n:'10',emoji:'🎉', word:'Ten'},
+];
+
+const GRAD_PAIRS = [
+  ['#dc143c','#8b0000'],['#1565c0','#003087'],['#dc143c','#1565c0'],
+  ['#8b0000','#dc143c'],['#003087','#1565c0'],['#c0392b','#922b21'],
+  ['#1a237e','#283593'],['#dc143c','#003087'],['#b71c1c','#0d47a1'],
+  ['#880e4f','#1565c0'],
+];
+const BTN_GRADIENTS = [
+  ['#dc143c','#8b0000'],['#1565c0','#003087'],['#e53935','#b71c1c'],
+  ['#1976d2','#0d47a1'],['#c62828','#7f0000'],['#1565c0','#283593'],
+  ['#d32f2f','#b71c1c'],['#0d47a1','#1a237e'],
+];
+const CONFETTI_COLS = ['#dc143c','#ffd700','#1565c0','#ffffff','#ff4444','#003087','#ffcc00','#ff0000'];
+const DECO_EMOJIS   = ['🕷️','🕸️','⭐','💥','🦸','🌟','💫','🔵','🔴','⚡','🎯'];
+
+// ── VOICE ────────────────────────────────────────────────────────────────────
+let chosenVoice = null;
+
+function loadVoice() {
+  const vs = window.speechSynthesis.getVoices();
+  if (!vs.length) return;
+  chosenVoice =
+    vs.find(v => /aria|jenny|michelle|ana|emma/i.test(v.name) && /online|natural|neural/i.test(v.name)) ||
+    vs.find(v => /microsoft/i.test(v.name) && /online/i.test(v.name) && /en/i.test(v.lang)) ||
+    vs.find(v => /zira|samantha|karen|moira|tessa|allison|ava|fiona|victoria|susan/i.test(v.name)) ||
+    vs.find(v => /en[-_]/i.test(v.lang) && !/david|mark|james|male/i.test(v.name)) || null;
+}
+window.speechSynthesis.addEventListener('voiceschanged', loadVoice);
+loadVoice();
+
+function speak(text, pitch, rate, onEnd) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const u  = new SpeechSynthesisUtterance(text);
+  u.pitch  = pitch  ?? 1.1;
+  u.rate   = rate   ?? 0.85;
+  u.volume = 1.0;
+  if (chosenVoice) u.voice = chosenVoice;
+  if (onEnd) u.onend = onEnd;
+  window.speechSynthesis.speak(u);
+}
+
+// ── BACKGROUND DECORATION ────────────────────────────────────────────────────
+const decoLayer = document.getElementById('decoLayer');
+for (let i = 0; i < 14; i++) {
+  const d = document.createElement('div');
+  d.className    = 'float-deco';
+  d.textContent  = DECO_EMOJIS[i % DECO_EMOJIS.length];
+  d.style.left   = Math.random() * 100 + 'vw';
+  d.style.fontSize = (16 + Math.random() * 20) + 'px';
+  d.style.animationDuration = (7 + Math.random() * 13) + 's';
+  d.style.animationDelay    = -(Math.random() * 18) + 's';
+  decoLayer.appendChild(d);
+}
+
+// ── GAME STATE ───────────────────────────────────────────────────────────────
+let mode     = 'abc';
+let queue    = [];
+let current  = null;
+let score    = 0;
+let total    = 10;
+let answered = false;
+
+// ── STARS ROW ────────────────────────────────────────────────────────────────
+function renderStars() {
+  const row = document.getElementById('starsRow');
+  row.innerHTML = '';
+  for (let i = 0; i < total; i++) {
+    const s = document.createElement('span');
+    s.className   = 'star-slot';
+    s.textContent = i < score ? '⭐' : '☆';
+    row.appendChild(s);
+    if (i === score - 1) requestAnimationFrame(() => s.classList.add('pop'));
+  }
+}
+
+// ── MODE SWITCH ──────────────────────────────────────────────────────────────
+function setMode(m) {
+  stopAutoPlay();
+  mode = m;
+
+  const isLearn = m === 'learn';
+  document.getElementById('tabLearn').classList.toggle('active', isLearn);
+  document.getElementById('tabABC').classList.toggle('active',   m === 'abc');
+  document.getElementById('tab123').classList.toggle('active',   m === '123');
+
+  // Show/hide quiz vs learn elements
+  document.getElementById('choices').style.display    = isLearn ? 'none' : 'flex';
+  document.getElementById('learnPanel').style.display = isLearn ? 'flex' : 'none';
+  document.getElementById('starsRow').style.display   = isLearn ? 'none' : 'flex';
+  const askBtn = document.querySelector('.ask-btn');
+  if (askBtn) askBtn.style.display = isLearn ? 'none' : '';
+
+  if (isLearn) {
+    enterLearnMode();
+  } else {
+    score = 0;
+    buildQueue();
+    nextQuestion();
+  }
+}
+
+function buildQueue() {
+  const pool = mode === 'abc' ? LETTERS : NUMBERS;
+  total = Math.min(10, pool.length);
+  queue = [...pool].sort(() => Math.random() - 0.5).slice(0, total);
+}
+
+// ── START / RESET ────────────────────────────────────────────────────────────
+function startGame() {
+  document.getElementById('startScreen').style.display = 'none';
+  document.getElementById('gameWrap').style.display    = 'flex';
+  // Start on Learn tab by default
+  setMode('learn');
+}
+
+function resetRound() {
+  document.getElementById('celebration').style.display = 'none';
+  stopAutoPlay();
+  score = 0;
+  buildQueue();
+  nextQuestion();
+  renderStars();
+}
+
+// ── QUESTION FLOW ────────────────────────────────────────────────────────────
+function nextQuestion() {
+  if (queue.length === 0) { celebrate(); return; }
+  answered = false;
+  current  = queue.shift();
+  renderCard();
+  renderChoices();
+  renderStars();
+  setTimeout(askQuestion, 700);
+}
+
+function renderCard() {
+  const isNum = mode === '123';
+  const label = isNum ? current.n : current.l;
+  const [c1, c2] = GRAD_PAIRS[Math.floor(Math.random() * GRAD_PAIRS.length)];
+
+  const charEl = document.getElementById('mainChar');
+  charEl.textContent = label;
+  charEl.style.setProperty('--c1', c1);
+  charEl.style.setProperty('--c2', c2);
+  document.getElementById('mainEmoji').textContent = current.emoji;
+  document.getElementById('mainWord').textContent  = current.word;
+
+  const numEl = document.getElementById('numObjects');
+  numEl.innerHTML = '';
+  if (isNum) {
+    const count = parseInt(current.n);
+    for (let i = 0; i < count; i++) {
+      const sp = document.createElement('span');
+      sp.textContent = current.emoji;
+      numEl.appendChild(sp);
+    }
+    numEl.style.display = 'flex';
+  } else {
+    numEl.style.display = 'none';
+  }
+
+  // Restart card float animation
+  const card = document.getElementById('mainCard');
+  card.style.animation = 'none';
+  requestAnimationFrame(() => { card.style.animation = ''; });
+}
+
+function renderChoices() {
+  const pool    = mode === 'abc' ? LETTERS : NUMBERS;
+  const correct = mode === 'abc' ? current.l : current.n;
+  const wrong   = pool.filter(x => (mode==='abc'?x.l:x.n) !== correct)
+                      .sort(() => Math.random()-0.5).slice(0, 2);
+  const all     = [current, ...wrong].sort(() => Math.random()-0.5);
+
+  const el = document.getElementById('choices');
+  el.innerHTML = '';
+  all.forEach((item, i) => {
+    const label = mode === 'abc' ? item.l : item.n;
+    const [bg1, bg2] = BTN_GRADIENTS[i % BTN_GRADIENTS.length];
+    const btn = document.createElement('button');
+    btn.className   = 'choice-btn';
+    btn.textContent = label;
+    btn.style.background = `linear-gradient(145deg, ${bg1}, ${bg2})`;
+    btn.onclick = () => handleAnswer(label === correct, btn);
+    el.appendChild(btn);
+  });
+}
+
+function askQuestion() {
+  if (!current) return;
+  const type = mode === '123' ? 'number' : 'letter';
+  speak(`Sky-ler, what ${type} is this?`, 1.1, 0.82);
+}
+
+function handleAnswer(isCorrect, btn) {
+  if (answered) return;
+
+  if (isCorrect) {
+    answered = true;
+    btn.classList.add('pop');
+    score++;
+    renderStars();
+    spawnConfetti(48);
+
+    const isNum = mode === '123';
+    const msg = isNum
+      ? `That is the number ${current.n}! ${current.n} is for ${current.word}! Great job Sky-ler!`
+      : `That is the letter ${current.l}! ${current.l} is for ${current.word}! Great job Sky-ler!`;
+
+    speak(msg, 1.1, 0.88, () => setTimeout(nextQuestion, 420));
+
+  } else {
+    btn.classList.add('shake');
+    btn.addEventListener('animationend', () => btn.classList.remove('shake'), { once: true });
+    // Flash card pink
+    const card = document.getElementById('mainCard');
+    card.classList.add('wrong-flash');
+    card.addEventListener('animationend', () => card.classList.remove('wrong-flash'), { once: true });
+    speak('Oops! Try again Sky-ler!', 1.05, 0.82);
+  }
+}
+
+// ── CONFETTI ─────────────────────────────────────────────────────────────────
+function spawnConfetti(count) {
+  for (let i = 0; i < count; i++) {
+    const c = document.createElement('div');
+    c.className          = 'confetti';
+    c.style.left         = Math.random() * 100 + 'vw';
+    c.style.top          = '-30px';
+    c.style.width        = (7 + Math.random() * 11) + 'px';
+    c.style.height       = (7 + Math.random() * 11) + 'px';
+    c.style.borderRadius = Math.random() > 0.45 ? '50%' : '2px';
+    c.style.background   = CONFETTI_COLS[Math.floor(Math.random() * CONFETTI_COLS.length)];
+    c.style.animationDuration = (1.4 + Math.random() * 2.2) + 's';
+    c.style.animationDelay    = (Math.random() * 0.6) + 's';
+    document.body.appendChild(c);
+    c.addEventListener('animationend', () => c.remove());
+  }
+}
+
+// ── LEARN MODE ───────────────────────────────────────────────────────────────
+let learnType    = 'abc';   // 'abc' or '123'
+let learnIndex   = 0;
+let learnSeen    = new Set();
+let autoPlayTimer = null;
+let autoPlaying  = false;
+
+function enterLearnMode() {
+  learnIndex = 0;
+  learnSeen.clear();
+  learnRenderStrip();
+  learnShowCurrent(true);
+}
+
+function learnSetType(t) {
+  stopAutoPlay();
+  learnType  = t;
+  learnIndex = 0;
+  learnSeen.clear();
+  document.getElementById('learnTabABC').classList.toggle('active', t === 'abc');
+  document.getElementById('learnTab123').classList.toggle('active', t === '123');
+  learnRenderStrip();
+  learnShowCurrent(true);
+}
+
+function learnPool() {
+  return learnType === 'abc' ? LETTERS : NUMBERS;
+}
+
+function learnShowCurrent(speakIt) {
+  const pool = learnPool();
+  const item = pool[learnIndex];
+  learnSeen.add(learnIndex);
+
+  // Reuse the shared card rendering
+  const isNum = learnType === '123';
+  const label = isNum ? item.n : item.l;
+  const [c1, c2] = GRAD_PAIRS[learnIndex % GRAD_PAIRS.length];
+
+  const charEl = document.getElementById('mainChar');
+  charEl.textContent = label;
+  charEl.style.setProperty('--c1', c1);
+  charEl.style.setProperty('--c2', c2);
+  document.getElementById('mainEmoji').textContent = item.emoji;
+  document.getElementById('mainWord').textContent  = item.word;
+
+  const numEl = document.getElementById('numObjects');
+  numEl.innerHTML = '';
+  if (isNum) {
+    const count = parseInt(item.n);
+    for (let i = 0; i < count; i++) {
+      const sp = document.createElement('span');
+      sp.textContent = item.emoji;
+      numEl.appendChild(sp);
+    }
+    numEl.style.display = 'flex';
+  } else {
+    numEl.style.display = 'none';
+  }
+
+  // Restart card animation
+  const card = document.getElementById('mainCard');
+  card.style.animation = 'none';
+  requestAnimationFrame(() => { card.style.animation = ''; });
+
+  // Position label
+  document.getElementById('learnPos').textContent =
+    `${label}  ·  ${learnIndex + 1} of ${pool.length}`;
+
+  learnUpdateStrip();
+
+  if (speakIt) setTimeout(() => learnSpeakCurrent(), 350);
+}
+
+function learnSpeakCurrent() {
+  const pool = learnPool();
+  const item = pool[learnIndex];
+  const isNum = learnType === '123';
+  const label = isNum ? item.n : item.l;
+  const msg   = isNum
+    ? `The number ${item.n}! ... ${item.word}! ... Can you say ${item.word}?`
+    : `${label}! ... ${label} is for ${item.word}! ... Can you say ${label}?`;
+  speak(msg, 1.1, 0.80);
+}
+
+function learnNext() {
+  const pool = learnPool();
+  if (learnIndex < pool.length - 1) {
+    learnIndex++;
+    learnShowCurrent(true);
+  } else {
+    // Reached the end — celebrate!
+    stopAutoPlay();
+    learnShowCurrent(false);
+    const isNum = learnType === '123';
+    const msg = isNum
+      ? 'Incredible Sky-ler! You went through all the numbers from one to ten! Super hero power!'
+      : 'Incredible Sky-ler! You went through all the letters from A to Z! Super hero power!';
+    speak(msg, 1.1, 0.85, () => {
+      spawnConfetti(70);
+      spawnConfetti(70);
+    });
+    spawnConfetti(50);
+  }
+}
+
+function learnPrev() {
+  if (learnIndex > 0) {
+    learnIndex--;
+    learnShowCurrent(true);
+  }
+}
+
+function learnRenderStrip() {
+  const pool  = learnPool();
+  const strip = document.getElementById('seqStrip');
+  strip.innerHTML = '';
+  pool.forEach((item, i) => {
+    const label = learnType === 'abc' ? item.l : item.n;
+    const btn   = document.createElement('button');
+    btn.className   = 'seq-bub';
+    btn.textContent = label;
+    btn.id          = `seqBub${i}`;
+    btn.onclick     = () => { learnIndex = i; learnShowCurrent(true); };
+    strip.appendChild(btn);
+  });
+}
+
+function learnUpdateStrip() {
+  const pool = learnPool();
+  pool.forEach((_, i) => {
+    const bub = document.getElementById(`seqBub${i}`);
+    if (!bub) return;
+    bub.className = 'seq-bub' +
+      (i === learnIndex ? ' current' :
+       learnSeen.has(i) ? ' done' : '');
+  });
+  // Scroll current bubble into view
+  const active = document.getElementById(`seqBub${learnIndex}`);
+  if (active) {
+    const wrap = document.getElementById('seqStripWrap');
+    const bLeft  = active.offsetLeft;
+    const bWidth = active.offsetWidth;
+    const wWidth = wrap.offsetWidth;
+    wrap.scrollTo({ left: bLeft - wWidth / 2 + bWidth / 2, behavior: 'smooth' });
+  }
+}
+
+// ── AUTO-PLAY ────────────────────────────────────────────────────────────────
+function toggleAutoPlay() {
+  if (autoPlaying) {
+    stopAutoPlay();
+  } else {
+    startAutoPlay();
+  }
+}
+
+function startAutoPlay() {
+  autoPlaying = true;
+  const btn = document.getElementById('autoplayBtn');
+  btn.textContent = '⏸ Pause';
+  btn.classList.add('playing');
+  autoPlayStep();
+}
+
+function autoPlayStep() {
+  if (!autoPlaying) return;
+  learnShowCurrent(true);
+  const pool = learnPool();
+  // Wait for speech + pause, then advance
+  const delay = learnType === 'abc' ? 3200 : 3500;
+  autoPlayTimer = setTimeout(() => {
+    if (!autoPlaying) return;
+    if (learnIndex < pool.length - 1) {
+      learnIndex++;
+      autoPlayStep();
+    } else {
+      stopAutoPlay();
+      // Finished the whole sequence
+      setTimeout(() => {
+        spawnConfetti(60);
+        speak('Incredible Sky-ler! You listened to all of them! You are a true superhero!', 1.1, 0.85);
+      }, 600);
+    }
+  }, delay);
+}
+
+function stopAutoPlay() {
+  autoPlaying = false;
+  clearTimeout(autoPlayTimer);
+  autoPlayTimer = null;
+  const btn = document.getElementById('autoplayBtn');
+  if (btn) {
+    btn.textContent = '▶ Auto Play';
+    btn.classList.remove('playing');
+  }
+}
+
+// ── CELEBRATION ──────────────────────────────────────────────────────────────
+function celebrate() {
+  const isNum = mode === '123';
+  document.getElementById('celebTitle').textContent = '💥 Super Hero Skyler! 💥';
+  document.getElementById('celebText').textContent  = isNum
+    ? 'You know all your numbers! You are a true superhero!'
+    : 'You know all your letters! You are a true superhero!';
+  document.getElementById('celebration').style.display = 'flex';
+  spawnConfetti(70); spawnConfetti(70);
+  speak(
+    isNum
+      ? 'Incredible Sky-ler! You know all your numbers from one to ten! You are a true superhero!'
+      : 'Incredible Sky-ler! You know all your letters from A to Z! You are a true superhero!',
+    1.1, 0.85
+  );
+}
+</script>
+</body>
+</html>

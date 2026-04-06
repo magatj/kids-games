@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kids Games</title>
+  <style>
+    body {
+      font-family: 'Comic Sans MS', 'Chalkboard SE', cursive;
+      background: linear-gradient(135deg, #a8edea, #fed6e3);
+      min-height: 100vh;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+    }
+    h1 {
+      font-size: 3em;
+      color: #5b4fcf;
+      text-shadow: 3px 3px 0 #f9a8d4;
+      margin-bottom: 10px;
+    }
+    p.subtitle {
+      font-size: 1.3em;
+      color: #6b7280;
+      margin-bottom: 40px;
+    }
+    .games {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 24px;
+      max-width: 900px;
+      width: 100%;
+    }
+    .game-card {
+      background: white;
+      border-radius: 20px;
+      padding: 30px 20px;
+      text-align: center;
+      text-decoration: none;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .game-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 16px 32px rgba(0,0,0,0.18);
+    }
+    .game-card .icon {
+      font-size: 3em;
+      margin-bottom: 12px;
+    }
+    .game-card h2 {
+      font-size: 1.3em;
+      color: #374151;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎮 Kids Games!</h1>
+  <p class="subtitle">Pick a game and have fun!</p>
+  <div class="games">
+    <a class="game-card" href="addie_new.html">
+      <div class="icon">🌸</div>
+      <h2>Addie's Game</h2>
+    </a>
+    <a class="game-card" href="addie_sweet_world.html">
+      <div class="icon">🍭</div>
+      <h2>Addie's Sweet World</h2>
+    </a>
+    <a class="game-card" href="skyler_abc_123.html">
+      <div class="icon">🔤</div>
+      <h2>Skyler's ABC 123</h2>
+    </a>
+    <a class="game-card" href="sparkle_unicorn_adventure.html">
+      <div class="icon">🦄</div>
+      <h2>Sparkle Unicorn Adventure</h2>
+    </a>
+  </div>
+</body>
+</html>
