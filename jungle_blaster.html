@@ -366,6 +366,61 @@
     const GROUND_Y = 450;
     const BEST_KEY = "jungle-blaster-best-score";
 
+    let audioCtx = null;
+
+    function unlockAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === "suspended") audioCtx.resume();
+    }
+
+    function playTone(freq, dur, type, vol, freqEnd) {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      const now = audioCtx.currentTime;
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, now);
+      if (freqEnd !== undefined) osc.frequency.exponentialRampToValueAtTime(freqEnd, now + dur);
+      gain.gain.setValueAtTime(vol, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + dur);
+    }
+
+    function playSound(kind) {
+      if (!audioCtx) return;
+      if (kind === "shoot") {
+        playTone(520, 0.07, "square", 0.06, 260);
+      } else if (kind === "jump") {
+        playTone(220, 0.12, "triangle", 0.07, 440);
+      } else if (kind === "explode") {
+        playTone(140, 0.18, "sawtooth", 0.08, 60);
+        setTimeout(() => playTone(90, 0.14, "sawtooth", 0.05), 60);
+      } else if (kind === "hurt") {
+        playTone(180, 0.22, "sawtooth", 0.1, 80);
+        setTimeout(() => playTone(120, 0.18, "sawtooth", 0.07), 80);
+      } else if (kind === "pickup") {
+        playTone(660, 0.1, "sine", 0.07);
+        setTimeout(() => playTone(880, 0.1, "sine", 0.06), 70);
+        setTimeout(() => playTone(1100, 0.14, "sine", 0.05), 140);
+      } else if (kind === "wave") {
+        playTone(330, 0.1, "triangle", 0.07);
+        setTimeout(() => playTone(440, 0.1, "triangle", 0.07), 100);
+        setTimeout(() => playTone(550, 0.15, "triangle", 0.07), 200);
+      } else if (kind === "victory") {
+        [0, 100, 200, 320].forEach((t, i) => {
+          setTimeout(() => playTone([523, 659, 784, 1047][i], 0.2, "triangle", 0.07), t);
+        });
+      } else if (kind === "gameover") {
+        playTone(300, 0.2, "sawtooth", 0.08, 150);
+        setTimeout(() => playTone(200, 0.3, "sawtooth", 0.07, 80), 180);
+      }
+    }
+
     const input = {
       left: false,
       right: false,
@@ -452,6 +507,7 @@
     }
 
     function startGame() {
+      unlockAudio();
       resetGame();
       state.running = true;
       state.paused = false;
@@ -472,6 +528,7 @@
     }
 
     function finishGame(victory) {
+      playSound(victory ? "victory" : "gameover");
       state.running = false;
       state.paused = false;
       if (state.score > state.best) {
@@ -554,6 +611,7 @@
         return;
       }
 
+      playSound("shoot");
       state.hero.shootCooldown = 10;
       state.bullets.push({
         x: state.hero.x + state.hero.w / 2 + state.hero.facing * 18,
@@ -570,6 +628,7 @@
         return;
       }
 
+      playSound("hurt");
       state.lives -= 1;
       state.hero.invuln = 90;
       state.shake = 14;
@@ -596,6 +655,7 @@
       }
 
       if (input.jump && state.hero.onGround) {
+        playSound("jump");
         state.hero.vy = -11.5;
         state.hero.onGround = false;
       }
@@ -647,6 +707,7 @@
             if (enemy.hp <= 0) {
               enemy.dead = true;
               state.score += 100;
+              playSound("explode");
               addExplosion(enemy.x + enemy.w / 2, enemy.y + enemy.h / 2, "#ff9a4c", 18);
               updateHud();
             }
@@ -704,6 +765,7 @@
           pickup.dead = true;
           state.score += 250;
           state.lives = Math.min(5, state.lives + 1);
+          playSound("pickup");
           addExplosion(pickup.x, pickup.y, "#7df0ff", 16);
           updateHud();
         }
@@ -739,6 +801,7 @@
 
       if (state.score >= state.wave * 1200 && state.wave < 5) {
         state.wave += 1;
+        playSound("wave");
         state.flash = 10;
         updateHud();
       }
