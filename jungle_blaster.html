@@ -101,9 +101,12 @@
       justify-content: center;
       gap: 3px;
       margin-top: 4px;
-      font-size: 1.5rem;
+      font-size: 1.6rem;
       line-height: 1;
     }
+
+    .hearts .heart-full { color: #ff4455; }
+    .hearts .heart-empty { color: #334; }
 
     .game-wrap {
       position: relative;
@@ -442,7 +445,7 @@
       scoreEl.textContent = state.score;
       const maxLives = 5;
       livesEl.innerHTML = Array.from({ length: maxLives }, (_, i) =>
-        `<span>${i < state.lives ? "❤️" : "🖤"}</span>`
+        `<span class="${i < state.lives ? "heart-full" : "heart-empty"}">&#9829;</span>`
       ).join("");
       waveEl.textContent = state.wave;
       bestEl.textContent = state.best;
