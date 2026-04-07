@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Addie's Map Adventures 🗺️</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Comic Sans MS', 'Chalkboard SE', 'Arial Rounded MT Bold', cursive;
+      background: linear-gradient(135deg, #a8edea 0%, #fed6e3 50%, #ffecd2 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* ── Header ── */
+    #header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      background: linear-gradient(90deg, #7c3aed, #db2777, #f59e0b);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      flex-wrap: wrap;
+      gap: 8px;
+      z-index: 10;
+    }
+    #home-link {
+      text-decoration: none;
+      color: white;
+      font-size: 1em;
+      background: rgba(255,255,255,0.2);
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 2px solid rgba(255,255,255,0.5);
+      transition: background 0.2s;
+      white-space: nowrap;
+    }
+    #home-link:hover { background: rgba(255,255,255,0.35); }
+    #title {
+      font-size: clamp(1.1em, 3vw, 1.7em);
+      color: white;
+      text-shadow: 2px 2px 0 rgba(0,0,0,0.25);
+      text-align: center;
+      flex: 1;
+    }
+    #header-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    #quiz-btn {
+      background: #fbbf24;
+      color: #1a1a1a;
+      border: 3px solid #f59e0b;
+      border-radius: 20px;
+      padding: 7px 16px;
+      font-family: inherit;
+      font-size: 1em;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+      white-space: nowrap;
+    }
+    #quiz-btn:hover { transform: scale(1.05); box-shadow: 0 5px 14px rgba(0,0,0,0.25); }
+    #score-display {
+      color: white;
+      font-size: 1.1em;
+      text-shadow: 1px 1px 0 rgba(0,0,0,0.3);
+      white-space: nowrap;
+      display: none;
+    }
+
+    /* ── Map area ── */
+    #map-container {
+      flex: 1;
+      padding: 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    #us-map {
+      width: 100%;
+      max-width: 960px;
+      height: auto;
+      cursor: default;
+      filter: drop-shadow(0 4px 18px rgba(0,0,0,0.18));
+      touch-action: none;
+    }
+    .state-path {
+      stroke: rgba(255,255,255,0.9);
+      stroke-width: 1.2;
+      stroke-linejoin: round;
+      cursor: pointer;
+      transition: filter 0.12s;
+    }
+    .state-path:hover { filter: brightness(1.18) drop-shadow(0 0 5px rgba(0,0,0,0.3)); }
+    .inset-box { fill: rgba(255,255,255,0.45); stroke: #a78bfa; stroke-width: 1.5; rx: 8; }
+
+    /* Quiz glow on target state */
+    .quiz-target {
+      animation: state-pulse 0.75s ease-in-out infinite alternate;
+    }
+    @keyframes state-pulse {
+      from { stroke: rgba(255,255,255,0.9); stroke-width: 1.5; filter: brightness(1); }
+      to   { stroke: #facc15; stroke-width: 5;   filter: brightness(1.35) drop-shadow(0 0 10px #fbbf24); }
+    }
+    .correct-flash { animation: flash-green 0.65s ease forwards; }
+    @keyframes flash-green {
+      0%  { filter: brightness(1); }
+      35% { filter: brightness(2.2) drop-shadow(0 0 16px #22c55e); }
+      100%{ filter: brightness(1.1); }
+    }
+    .wrong-flash   { animation: flash-red 0.55s ease forwards; }
+    @keyframes flash-red {
+      0%,100% { filter: brightness(1); }
+      25%,65% { filter: brightness(1.6) drop-shadow(0 0 12px #ef4444); }
+    }
+
+    /* ── Info panel (slides in from right) ── */
+    #info-panel {
+      position: fixed;
+      top: 50%;
+      right: -430px;
+      transform: translateY(-50%);
+      width: min(390px, 94vw);
+      background: white;
+      border-radius: 24px;
+      box-shadow: 0 12px 44px rgba(0,0,0,0.28);
+      padding: 22px 24px 20px;
+      z-index: 100;
+      transition: right 0.35s cubic-bezier(0.34,1.4,0.64,1);
+      border: 4px solid #a78bfa;
+    }
+    #info-panel.open { right: 10px; }
+    #info-close {
+      position: absolute;
+      top: 10px; right: 12px;
+      background: #f3e8ff;
+      border: 2px solid #a78bfa;
+      border-radius: 50%;
+      width: 34px; height: 34px;
+      font-size: 1.1em;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.2s;
+    }
+    #info-close:hover { background: #ede9fe; }
+    #info-emoji  { font-size: 3em; text-align: center; margin-bottom: 4px; }
+    #info-name   { font-size: 1.45em; color: #4c1d95; text-align: center; margin-bottom: 3px; }
+    #info-nick   { font-size: 0.9em; color: #7c3aed; font-style: italic; text-align: center; margin-bottom: 14px; }
+    .info-row    { display: flex; gap: 8px; align-items: baseline; margin-bottom: 9px; font-size: 0.95em; color: #374151; }
+    .info-lbl    { font-weight: bold; color: #6d28d9; min-width: 68px; flex-shrink: 0; }
+    #info-fact {
+      background: #fef9c3;
+      border-left: 4px solid #fbbf24;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 0.9em;
+      color: #78350f;
+      margin-top: 8px;
+      line-height: 1.45;
+    }
+
+    /* ── Quiz floating prompt ── */
+    #quiz-panel {
+      display: none;
+      position: fixed;
+      top: 68px; left: 50%;
+      transform: translateX(-50%);
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.28);
+      padding: 16px 22px;
+      z-index: 100;
+      text-align: center;
+      border: 4px solid #34d399;
+      min-width: 260px; max-width: 94vw;
+    }
+    #quiz-panel.active { display: block; }
+    #quiz-prompt   { font-size: 1em; color: #065f46; margin-bottom: 4px; }
+    #quiz-state-nm { font-size: 1.6em; font-weight: bold; color: #7c3aed; }
+    #quiz-feedback { min-height: 24px; font-size: 1em; margin-top: 6px; }
+    #quiz-meta     { font-size: 0.85em; color: #6b7280; margin-top: 4px; }
+
+    /* ── Celebration ── */
+    #celebration {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.55);
+      z-index: 200; align-items: center; justify-content: center;
+    }
+    #celebration.show { display: flex; }
+    #cel-card {
+      background: white; border-radius: 28px;
+      padding: 34px 40px; text-align: center;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.35);
+      animation: pop-in 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards;
+      max-width: 92vw;
+    }
+    @keyframes pop-in {
+      from { transform: scale(0.3); opacity: 0; }
+      to   { transform: scale(1);   opacity: 1; }
+    }
+    #cel-emoji  { font-size: 4em; }
+    #cel-title  { font-size: 1.9em; color: #7c3aed; margin: 10px 0 6px; }
+    #cel-score  { font-size: 1.3em; color: #374151; margin-bottom: 22px; }
+    #play-again {
+      background: linear-gradient(135deg, #a78bfa, #ec4899);
+      color: white; border: none; border-radius: 20px;
+      padding: 12px 28px;
+      font-family: inherit; font-size: 1.15em;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.2);
+      transition: transform 0.15s;
+      margin-right: 10px;
+    }
+    #play-again:hover { transform: scale(1.05); }
+    #stop-cel {
+      background: #e5e7eb; color: #374151; border: none;
+      border-radius: 20px; padding: 12px 22px;
+      font-family: inherit; font-size: 1em; cursor: pointer;
+      transition: background 0.2s;
+    }
+    #stop-cel:hover { background: #d1d5db; }
+
+    /* Confetti */
+    .confetti { position: fixed; top: -12px; border-radius: 3px; z-index: 300; animation: cfall linear forwards; }
+    @keyframes cfall { to { transform: translateY(110vh) rotate(800deg); opacity: 0; } }
+
+    /* Tooltip */
+    #tip {
+      position: fixed; background: rgba(20,10,50,0.86);
+      color: white; padding: 4px 11px; border-radius: 10px;
+      font-size: 0.82em; pointer-events: none; z-index: 50;
+      display: none; white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+
+<div id="header">
+  <a id="home-link" href="index.html">🏠 Home</a>
+  <div id="title">Addie's Map Adventures 🗺️</div>
+  <div id="header-right">
+    <div id="score-display">⭐ <span id="star-count">0</span></div>
+    <button id="quiz-btn" onclick="startQuiz()">🎯 Quiz Me!</button>
+  </div>
+</div>
+
+<!-- Quiz prompt bar -->
+<div id="quiz-panel">
+  <div id="quiz-prompt">Click on this state!</div>
+  <div id="quiz-state-nm">—</div>
+  <div id="quiz-feedback"></div>
+  <div id="quiz-meta">Question <span id="q-num">1</span> of 10</div>
+</div>
+
+<!-- Map -->
+<div id="map-container">
+<svg id="us-map" viewBox="0 0 960 600" xmlns="http://www.w3.org/2000/svg">
+
+  <!-- Ocean / background -->
+  <rect x="0" y="0" width="960" height="600" fill="#bfdbfe"/>
+
+  <!-- ═══════════════════════════════════════════════
+       All 50 US States — standard Albers USA SVG
+       Source: public-domain simplified topojson
+       Each path: id = 2-letter FIPS abbreviation
+       ═══════════════════════════════════════════════ -->
+
+  <!-- Alabama -->
+  <path id="AL" class="state-path" d="M 598.5 474.5 L 598.5 480 L 594.5 486 L 591 489 L 590 499 L 585 499 L 580 496 L 577 490 L 576 483 L 570 477 L 568 471 L 570 465 L 572 455 L 569 446 L 568 435 L 570 427 L 572 417 L 575 409 L 575 403 L 572 390 L 571 380 L 571 364 L 572 353 L 570 344 L 571 330 L 606 330 L 618 330 L 618 340 L 618 350 L 618 360 L 618 370 L 618 380 L 618 390 L 618 400 L 618 410 L 618 420 L 618 430 L 612 433 L 608 437 L 607 444 L 607 454 L 605 462 L 602 468 Z"/>
+
+  <!-- Alaska (inset lower-left) -->
+  <path id="AK" class="state-path" d="M 100 527 L 108 523 L 116 521 L 124 521 L 131 523 L 138 528 L 142 534 L 143 541 L 140 547 L 136 552 L 135 558 L 140 563 L 147 565 L 154 562 L 161 558 L 169 556 L 177 556 L 184 559 L 190 564 L 192 571 L 190 578 L 185 583 L 178 585 L 170 584 L 162 580 L 158 573 L 155 582 L 157 590 L 163 595 L 169 590 L 168 583 L 175 583 L 179 589 L 178 596 L 171 598 L 163 597 L 156 592 L 153 584 L 150 575 L 149 567 L 154 560 L 148 555 L 141 552 L 135 551 L 128 553 L 121 558 L 115 563 L 108 567 L 100 568 L 92 565 L 86 559 L 83 551 L 85 543 L 90 537 L 96 532 Z M 80 544 L 73 541 L 67 543 L 63 549 L 63 556 L 68 562 L 75 564 L 82 562 L 86 556 L 85 549 Z M 60 552 L 52 548 L 46 551 L 43 557 L 44 564 L 50 568 L 58 568 L 64 564 L 65 557 Z"/>
+
+  <!-- Arizona -->
+  <path id="AZ" class="state-path" d="M 170 370 L 225 382 L 280 394 L 280 402 L 277 411 L 273 420 L 271 429 L 271 438 L 269 448 L 267 458 L 266 468 L 266 478 L 266 488 L 226 460 L 188 432 L 152 404 L 152 394 L 157 385 L 163 377 Z"/>
+
+  <!-- Arkansas -->
+  <path id="AR" class="state-path" d="M 571 364 L 572 353 L 570 344 L 571 330 L 572 320 L 573 310 L 573 300 L 573 292 L 538 292 L 520 292 L 505 292 L 503 300 L 503 310 L 503 320 L 503 330 L 503 340 L 503 350 L 505 360 L 507 367 L 514 369 L 520 370 L 536 370 L 552 370 L 556 364 Z"/>
+
+  <!-- California -->
+  <path id="CA" class="state-path" d="M 87 240 L 92 232 L 98 224 L 106 218 L 115 212 L 122 206 L 128 198 L 131 190 L 132 182 L 134 172 L 136 162 L 137 152 L 137 142 L 136 132 L 134 124 L 131 116 L 126 110 L 120 105 L 113 102 L 105 102 L 98 105 L 93 110 L 91 117 L 92 126 L 97 133 L 103 139 L 106 146 L 105 154 L 101 161 L 96 167 L 92 174 L 90 182 L 90 191 L 93 200 L 96 208 L 97 216 L 94 224 L 90 232 Z M 150 398 L 156 392 L 162 384 L 165 376 L 165 368 L 162 360 L 157 354 L 150 350 L 142 348 L 134 350 L 127 354 L 122 361 L 120 369 L 122 377 L 126 384 L 132 390 L 140 394 Z M 152 404 L 152 394 L 157 385 L 163 377 L 170 370 L 166 362 L 161 354 L 155 346 L 148 340 L 140 336 L 132 334 L 123 336 L 115 340 L 109 347 L 107 355 L 108 364 L 112 372 L 118 379 L 126 384 L 133 386 L 141 386 L 148 382 Z"/>
+
+  <!-- Colorado -->
+  <path id="CO" class="state-path" d="M 266 272 L 266 282 L 266 292 L 266 302 L 266 312 L 266 322 L 266 332 L 266 342 L 266 352 L 266 362 L 316 366 L 366 368 L 416 368 L 416 358 L 416 348 L 416 338 L 416 328 L 416 318 L 416 308 L 416 298 L 416 288 L 416 278 L 416 268 L 341 268 Z"/>
+
+  <!-- Connecticut -->
+  <path id="CT" class="state-path" d="M 833 172 L 827 174 L 823 179 L 820 185 L 819 192 L 820 198 L 825 202 L 831 204 L 838 202 L 844 197 L 845 191 L 843 184 L 839 178 Z"/>
+
+  <!-- Delaware -->
+  <path id="DE" class="state-path" d="M 806 216 L 811 212 L 815 207 L 817 201 L 815 195 L 810 192 L 804 191 L 798 193 L 795 198 L 795 205 L 798 211 L 802 215 Z"/>
+
+  <!-- Florida -->
+  <path id="FL" class="state-path" d="M 618 430 L 618 441 L 618 452 L 618 463 L 618 474 L 619 484 L 623 494 L 629 502 L 638 508 L 648 511 L 657 509 L 665 504 L 670 496 L 671 487 L 668 479 L 662 473 L 655 469 L 655 477 L 658 483 L 660 489 L 658 495 L 653 499 L 647 500 L 641 497 L 638 491 L 638 484 L 641 478 L 646 474 L 646 467 L 641 463 L 635 461 L 628 463 L 624 469 L 623 463 L 622 455 L 621 447 L 620 439 L 619 431 L 618 430 Z"/>
+
+  <!-- Georgia -->
+  <path id="GA" class="state-path" d="M 618 430 L 620 439 L 621 447 L 622 455 L 623 463 L 624 470 L 622 476 L 618 480 L 617 486 L 618 493 L 620 499 L 613 499 L 613 492 L 608 488 L 601 483 L 596 477 L 594 471 L 597 465 L 601 461 L 605 455 L 607 444 L 607 437 L 612 433 L 618 430 Z M 618 430 L 618 420 L 618 410 L 618 400 L 618 390 L 618 380 L 618 370 L 618 360 L 618 350 L 618 340 L 618 330 L 606 330 L 593 330 L 580 330 L 578 334 L 579 344 L 580 354 L 581 364 L 582 374 L 582 384 L 583 394 L 584 404 L 585 414 L 585 424 L 588 430 L 596 434 L 604 436 L 612 435 Z"/>
+
+  <!-- Hawaii (inset lower-left, right of Alaska) -->
+  <path id="HI" class="state-path" d="M 242 555 L 249 551 L 256 551 L 262 555 L 264 562 L 261 569 L 254 572 L 246 570 L 242 563 Z M 272 546 L 279 542 L 286 543 L 291 548 L 291 555 L 287 561 L 280 563 L 273 560 L 270 554 Z M 301 535 L 308 531 L 315 533 L 319 539 L 319 547 L 314 552 L 307 553 L 300 549 L 298 543 Z M 323 521 L 331 518 L 339 521 L 343 528 L 342 536 L 336 540 L 328 539 L 323 533 L 322 526 Z M 348 507 L 358 504 L 366 508 L 370 516 L 368 524 L 361 528 L 352 526 L 347 519 L 347 512 Z"/>
+
+  <!-- Idaho -->
+  <path id="ID" class="state-path" d="M 196 116 L 201 125 L 205 135 L 206 146 L 205 157 L 202 168 L 198 178 L 195 189 L 194 200 L 195 211 L 198 221 L 204 230 L 210 236 L 217 240 L 224 242 L 231 242 L 237 239 L 242 234 L 244 227 L 243 220 L 240 213 L 236 207 L 234 200 L 234 192 L 237 185 L 241 178 L 243 171 L 243 163 L 241 155 L 237 148 L 232 143 L 226 140 L 219 140 L 212 143 L 205 148 L 199 155 Z M 220 242 L 220 252 L 220 262 L 220 272 L 220 282 L 240 282 L 260 282 L 280 282 L 280 272 L 280 262 L 280 252 L 280 242 L 274 240 L 267 238 L 260 236 L 252 234 L 244 232 Z"/>
+
+  <!-- Illinois -->
+  <path id="IL" class="state-path" d="M 573 240 L 570 249 L 566 258 L 564 268 L 564 278 L 566 288 L 570 297 L 573 306 L 573 316 L 573 326 L 572 336 L 571 346 L 572 356 L 572 366 L 570 374 L 552 370 L 548 368 L 538 368 L 520 368 L 506 368 L 505 360 L 503 350 L 503 340 L 503 330 L 503 320 L 503 310 L 503 300 L 503 292 L 505 282 L 507 272 L 507 262 L 505 252 L 501 242 L 498 232 L 498 222 L 499 212 L 503 205 L 510 200 L 518 198 L 526 199 L 533 203 L 538 210 L 542 218 L 546 227 L 550 236 L 556 242 Z"/>
+
+  <!-- Indiana -->
+  <path id="IN" class="state-path" d="M 620 228 L 617 218 L 614 208 L 612 198 L 611 188 L 611 178 L 613 170 L 616 164 L 623 160 L 631 158 L 639 160 L 646 164 L 650 171 L 651 179 L 649 187 L 645 196 L 642 205 L 640 214 L 639 223 L 639 233 L 638 242 L 636 251 L 631 256 L 625 258 L 619 256 L 615 249 L 614 240 Z"/>
+
+  <!-- Iowa -->
+  <path id="IA" class="state-path" d="M 505 218 L 506 208 L 507 198 L 506 188 L 503 179 L 498 172 L 491 167 L 484 163 L 476 162 L 468 163 L 461 167 L 455 173 L 452 181 L 451 190 L 452 200 L 454 210 L 458 218 L 463 224 L 470 228 L 478 230 L 486 229 L 494 225 L 501 220 Z"/>
+
+  <!-- Kansas -->
+  <path id="KS" class="state-path" d="M 416 328 L 416 318 L 416 308 L 416 298 L 416 288 L 416 278 L 416 268 L 393 268 L 363 268 L 333 268 L 303 268 L 283 268 L 266 272 L 266 282 L 266 292 L 266 302 L 266 312 L 266 322 L 266 332 L 266 342 L 300 342 L 334 342 L 368 342 L 402 342 L 416 340 L 416 334 Z"/>
+
+  <!-- Kentucky -->
+  <path id="KY" class="state-path" d="M 640 264 L 639 255 L 636 248 L 630 252 L 624 254 L 618 252 L 614 246 L 614 238 L 617 231 L 622 228 L 614 240 L 615 249 L 619 256 L 625 258 L 631 256 L 636 251 L 638 242 L 639 233 L 639 223 L 638 215 L 636 208 L 630 206 L 624 206 L 617 208 L 610 212 L 604 218 L 600 224 L 597 232 L 596 240 L 598 248 L 603 255 L 609 260 L 617 262 L 625 262 L 633 260 Z M 596 240 L 590 238 L 584 238 L 577 240 L 571 243 L 566 248 L 563 255 L 562 262 L 564 270 L 567 278 L 570 286 L 572 294 L 573 300 L 573 292 L 573 285 L 576 280 L 581 276 L 588 274 L 595 274 L 602 276 L 608 280 L 613 286 L 616 292 L 617 300 L 616 292 L 614 284 L 612 276 L 610 268 L 607 260 L 602 254 L 596 250 Z"/>
+
+  <!-- Louisiana -->
+  <path id="LA" class="state-path" d="M 519 422 L 517 412 L 516 402 L 516 392 L 517 382 L 519 372 L 520 370 L 507 367 L 505 360 L 503 350 L 503 340 L 503 330 L 489 330 L 475 330 L 461 330 L 461 340 L 461 350 L 461 360 L 462 370 L 464 380 L 468 388 L 473 394 L 479 398 L 485 402 L 493 406 L 500 410 L 506 416 L 508 424 L 510 432 L 512 440 L 515 447 L 519 450 L 523 449 L 526 444 L 525 437 Z"/>
+
+  <!-- Maine -->
+  <path id="ME" class="state-path" d="M 877 90 L 873 97 L 869 104 L 864 111 L 859 118 L 855 125 L 852 132 L 851 139 L 851 146 L 854 153 L 859 158 L 865 160 L 872 159 L 878 155 L 881 148 L 881 141 L 878 134 L 874 127 L 872 120 L 874 113 L 878 107 Z M 895 80 L 889 85 L 884 91 L 880 98 L 877 106 L 877 114 L 879 121 L 883 127 L 889 131 L 896 132 L 902 129 L 907 123 L 908 116 L 906 108 L 902 101 L 898 94 Z"/>
+
+  <!-- Maryland -->
+  <path id="MD" class="state-path" d="M 780 220 L 784 215 L 790 212 L 797 211 L 804 213 L 809 218 L 811 224 L 809 231 L 803 236 L 797 238 L 790 236 L 784 231 Z M 765 226 L 769 219 L 774 215 L 780 213 L 786 215 L 790 220 L 790 228 L 786 235 L 780 239 L 773 238 L 768 234 L 765 228 Z"/>
+
+  <!-- Massachusetts -->
+  <path id="MA" class="state-path" d="M 838 168 L 845 163 L 851 160 L 858 158 L 864 160 L 868 165 L 867 172 L 862 177 L 855 179 L 847 178 L 840 174 Z M 875 158 L 880 154 L 885 153 L 889 157 L 888 162 L 884 165 L 879 164 Z"/>
+
+  <!-- Michigan (lower peninsula + upper) -->
+  <path id="MI" class="state-path" d="M 600 140 L 594 134 L 590 127 L 589 119 L 591 111 L 595 105 L 601 102 L 608 102 L 615 105 L 619 112 L 619 120 L 616 128 L 611 134 L 605 138 Z M 662 142 L 656 136 L 649 132 L 642 130 L 634 130 L 627 133 L 621 138 L 618 145 L 618 153 L 621 160 L 627 165 L 635 167 L 643 165 L 651 160 L 657 153 L 661 146 Z M 595 178 L 601 170 L 609 164 L 618 160 L 628 158 L 638 160 L 646 164 L 652 170 L 655 178 L 654 186 L 650 193 L 643 198 L 635 200 L 626 200 L 618 197 L 611 192 L 607 185 L 606 178 Z"/>
+
+  <!-- Minnesota -->
+  <path id="MN" class="state-path" d="M 452 142 L 452 131 L 452 120 L 452 109 L 452 98 L 452 87 L 452 76 L 452 65 L 453 54 L 456 46 L 460 40 L 465 36 L 471 34 L 478 34 L 485 36 L 492 40 L 499 42 L 506 40 L 512 36 L 517 30 L 520 22 L 521 14 L 514 14 L 507 17 L 500 22 L 494 29 L 490 36 L 487 45 L 484 54 L 480 62 L 474 68 L 467 72 L 460 74 L 453 74 L 447 76 L 443 83 L 441 92 L 441 102 L 441 112 L 441 122 L 441 132 L 441 142 L 441 152 L 441 162 L 444 168 L 450 172 L 454 166 L 454 156 L 452 148 Z"/>
+
+  <!-- Mississippi -->
+  <path id="MS" class="state-path" d="M 568 435 L 570 446 L 572 455 L 570 464 L 568 471 L 570 477 L 576 483 L 577 490 L 580 496 L 585 499 L 590 499 L 591 489 L 594 486 L 598 480 L 598 474 L 601 468 L 605 462 L 607 454 L 607 444 L 607 437 L 612 433 L 618 430 L 618 420 L 618 410 L 618 400 L 618 390 L 618 380 L 618 370 L 582 370 L 582 374 L 582 384 L 582 394 L 582 404 L 582 414 L 580 424 L 576 430 L 572 435 Z"/>
+
+  <!-- Missouri -->
+  <path id="MO" class="state-path" d="M 572 300 L 571 310 L 570 320 L 569 330 L 569 340 L 568 350 L 571 352 L 572 362 L 572 372 L 570 380 L 556 376 L 552 370 L 538 370 L 520 370 L 506 368 L 505 360 L 503 350 L 503 340 L 503 330 L 503 320 L 503 310 L 503 300 L 503 292 L 573 292 Z M 572 300 L 573 290 L 573 280 L 575 274 L 577 268 L 582 264 L 588 262 L 595 262 L 601 265 L 606 270 L 608 277 L 607 285 L 605 293 L 605 300 L 572 300 Z"/>
+
+  <!-- Montana -->
+  <path id="MT" class="state-path" d="M 196 84 L 196 94 L 196 104 L 196 114 L 196 124 L 218 124 L 240 124 L 262 124 L 284 124 L 306 124 L 328 124 L 350 124 L 372 124 L 394 124 L 416 124 L 416 114 L 416 104 L 416 94 L 416 84 L 416 74 L 416 64 L 416 54 L 416 44 L 392 44 L 368 42 L 344 40 L 320 40 L 296 40 L 272 40 L 248 42 L 224 44 L 208 52 L 198 63 L 196 75 Z"/>
+
+  <!-- Nebraska -->
+  <path id="NE" class="state-path" d="M 416 268 L 416 258 L 416 248 L 416 238 L 416 228 L 416 218 L 393 218 L 369 216 L 345 214 L 321 212 L 297 212 L 274 214 L 260 218 L 260 228 L 260 238 L 260 248 L 260 258 L 260 268 L 296 268 L 333 268 L 370 268 L 407 268 Z"/>
+
+  <!-- Nevada -->
+  <path id="NV" class="state-path" d="M 170 242 L 171 253 L 171 264 L 171 275 L 171 286 L 171 297 L 171 308 L 171 319 L 171 330 L 171 341 L 171 352 L 171 363 L 171 374 L 171 384 L 171 394 L 173 402 L 184 396 L 197 390 L 210 384 L 225 382 L 228 373 L 229 363 L 230 353 L 230 343 L 230 333 L 230 323 L 230 313 L 230 303 L 230 293 L 230 282 L 228 272 L 210 250 L 193 242 Z"/>
+
+  <!-- New Hampshire -->
+  <path id="NH" class="state-path" d="M 851 136 L 849 128 L 848 119 L 849 111 L 852 105 L 856 101 L 861 99 L 866 100 L 870 105 L 871 112 L 869 120 L 865 128 L 860 134 L 855 138 Z"/>
+
+  <!-- New Jersey -->
+  <path id="NJ" class="state-path" d="M 812 212 L 815 206 L 816 199 L 814 192 L 809 186 L 803 182 L 796 181 L 790 183 L 786 188 L 787 195 L 789 202 L 794 207 L 800 210 L 806 213 Z"/>
+
+  <!-- New Mexico -->
+  <path id="NM" class="state-path" d="M 266 362 L 266 372 L 266 382 L 266 392 L 266 402 L 266 412 L 266 422 L 266 432 L 266 442 L 266 452 L 266 462 L 266 472 L 266 482 L 266 488 L 301 488 L 336 488 L 371 488 L 406 488 L 416 488 L 416 478 L 416 468 L 416 458 L 416 448 L 416 438 L 416 428 L 416 418 L 416 408 L 416 398 L 416 388 L 416 378 L 416 368 L 416 358 L 416 348 L 416 340 L 416 342 L 402 342 L 368 342 L 334 342 L 300 342 L 266 342 L 266 352 Z"/>
+
+  <!-- New York -->
+  <path id="NY" class="state-path" d="M 782 150 L 789 145 L 796 141 L 803 141 L 810 144 L 815 149 L 816 157 L 813 164 L 807 168 L 800 170 L 793 168 L 787 163 L 784 156 Z M 745 154 L 752 150 L 759 148 L 766 149 L 772 153 L 775 160 L 773 167 L 768 172 L 761 174 L 753 173 L 746 168 L 743 162 Z M 729 180 L 736 174 L 744 170 L 753 169 L 762 171 L 769 175 L 774 182 L 774 190 L 770 197 L 763 202 L 754 204 L 745 202 L 737 198 L 731 191 Z"/>
+
+  <!-- North Carolina -->
+  <path id="NC" class="state-path" d="M 706 296 L 708 288 L 710 280 L 711 272 L 709 264 L 706 258 L 700 254 L 694 252 L 688 252 L 681 254 L 675 258 L 668 261 L 661 263 L 655 261 L 648 258 L 643 252 L 640 245 L 639 237 L 639 229 L 638 221 L 636 213 L 634 207 L 630 203 L 625 201 L 620 202 L 616 207 L 614 214 L 615 222 L 619 228 L 625 231 L 632 232 L 639 234 L 645 238 L 649 244 L 650 252 L 648 260 L 642 266 L 636 269 L 629 271 L 622 271 L 616 269 L 611 263 L 610 255 L 613 247 L 620 243 L 628 241 L 636 243 L 643 247 L 646 255 L 644 262 L 638 268 L 631 271 L 625 273 L 618 277 L 614 283 L 613 290 L 612 298 L 612 306 L 615 312 L 620 315 L 627 316 L 634 313 L 640 309 L 648 305 L 656 301 L 663 298 L 670 298 L 678 300 L 685 301 L 692 300 L 699 297 Z"/>
+
+  <!-- North Dakota -->
+  <path id="ND" class="state-path" d="M 416 124 L 394 124 L 372 124 L 350 124 L 328 124 L 306 124 L 284 124 L 262 124 L 240 124 L 218 124 L 196 124 L 196 134 L 196 144 L 196 154 L 196 164 L 218 164 L 240 164 L 262 164 L 284 164 L 306 164 L 328 164 L 350 164 L 372 164 L 394 164 L 416 164 L 416 154 L 416 144 L 416 134 Z"/>
+
+  <!-- Ohio -->
+  <path id="OH" class="state-path" d="M 676 224 L 672 216 L 667 208 L 663 200 L 660 192 L 658 184 L 658 176 L 659 168 L 663 162 L 668 158 L 674 156 L 681 157 L 688 161 L 692 167 L 693 175 L 691 183 L 687 191 L 682 198 L 678 205 L 676 213 Z"/>
+
+  <!-- Oklahoma -->
+  <path id="OK" class="state-path" d="M 416 340 L 416 350 L 416 360 L 416 370 L 416 380 L 416 390 L 416 400 L 416 410 L 416 420 L 416 430 L 416 440 L 433 440 L 451 440 L 469 440 L 487 440 L 505 440 L 522 440 L 524 432 L 524 424 L 524 416 L 523 408 L 520 402 L 516 396 L 520 392 L 524 386 L 526 378 L 526 370 L 524 362 L 522 352 L 520 342 L 520 334 L 520 326 L 503 326 L 489 326 L 475 326 L 461 326 L 447 326 L 433 326 L 416 326 L 416 334 Z"/>
+
+  <!-- Oregon -->
+  <path id="OR" class="state-path" d="M 90 182 L 95 176 L 102 170 L 110 166 L 118 164 L 127 165 L 135 169 L 141 175 L 144 182 L 144 190 L 141 198 L 135 204 L 127 207 L 119 208 L 111 207 L 103 203 L 96 197 L 91 190 Z M 135 232 L 140 228 L 147 224 L 155 222 L 163 222 L 171 225 L 177 230 L 180 238 L 180 246 L 180 254 L 180 262 L 180 272 L 180 282 L 210 282 L 230 282 L 230 272 L 230 262 L 230 252 L 230 242 L 210 242 L 193 242 L 170 242 L 155 242 L 140 240 L 130 238 L 122 234 L 128 232 Z"/>
+
+  <!-- Pennsylvania -->
+  <path id="PA" class="state-path" d="M 768 198 L 772 190 L 776 182 L 781 176 L 787 172 L 794 170 L 801 170 L 807 174 L 810 180 L 811 188 L 809 196 L 805 202 L 798 206 L 791 208 L 784 207 L 778 202 L 773 197 Z"/>
+
+  <!-- Rhode Island -->
+  <path id="RI" class="state-path" d="M 843 188 L 838 184 L 833 183 L 828 186 L 826 192 L 828 198 L 833 201 L 839 200 L 844 196 Z"/>
+
+  <!-- South Carolina -->
+  <path id="SC" class="state-path" d="M 706 342 L 707 334 L 708 326 L 708 318 L 706 310 L 702 304 L 696 300 L 690 298 L 684 299 L 677 302 L 671 306 L 666 312 L 663 318 L 663 326 L 666 333 L 671 338 L 679 343 L 688 345 L 697 344 Z"/>
+
+  <!-- South Dakota -->
+  <path id="SD" class="state-path" d="M 416 164 L 394 164 L 372 164 L 350 164 L 328 164 L 306 164 L 284 164 L 262 164 L 240 164 L 218 164 L 196 164 L 196 174 L 196 184 L 196 194 L 196 204 L 196 212 L 218 212 L 240 212 L 262 212 L 284 212 L 306 212 L 328 212 L 345 212 L 362 214 L 379 216 L 396 216 L 416 216 L 416 206 L 416 196 L 416 186 L 416 176 Z"/>
+
+  <!-- Tennessee -->
+  <path id="TN" class="state-path" d="M 616 298 L 613 292 L 609 286 L 604 282 L 598 280 L 592 280 L 585 283 L 579 287 L 573 292 L 569 298 L 568 306 L 568 314 L 569 322 L 570 330 L 571 330 L 582 330 L 593 330 L 606 330 L 618 330 L 631 330 L 643 330 L 656 330 L 669 330 L 681 330 L 694 330 L 706 330 L 718 328 L 727 324 L 732 317 L 732 308 L 728 300 L 721 295 L 714 292 L 706 291 L 699 292 L 692 294 L 685 296 L 678 297 L 671 296 L 664 293 L 658 289 L 651 287 L 644 287 L 637 289 L 630 292 L 623 295 Z"/>
+
+  <!-- Texas -->
+  <path id="TX" class="state-path" d="M 416 398 L 416 408 L 416 418 L 416 428 L 416 438 L 416 448 L 416 458 L 416 468 L 416 478 L 416 488 L 436 488 L 456 488 L 476 488 L 496 488 L 516 488 L 516 478 L 516 468 L 516 458 L 516 448 L 516 438 L 516 430 L 518 440 L 520 450 L 524 458 L 530 464 L 538 468 L 547 470 L 556 468 L 563 463 L 568 456 L 570 448 L 568 440 L 563 434 L 556 430 L 548 428 L 540 428 L 532 430 L 525 435 L 522 440 L 505 440 L 487 440 L 469 440 L 451 440 L 433 440 L 416 440 L 416 430 L 416 420 L 416 410 L 416 400 Z M 416 488 L 416 498 L 416 508 L 416 516 L 420 524 L 427 531 L 436 536 L 446 538 L 456 536 L 465 531 L 471 524 L 473 516 L 470 508 L 464 502 L 456 498 L 448 496 L 440 498 L 434 504 L 431 511 L 432 519 L 437 526 L 445 530 L 454 531 L 463 527 L 468 521 L 470 513 L 467 506 L 460 501 L 452 499 L 444 501 L 438 506 L 436 513 L 438 521 L 444 527 L 452 530 L 461 528 L 467 523 L 469 516 L 466 509 L 459 504 L 451 503 L 443 506 L 439 512 L 440 520 L 446 526 L 454 528 L 462 525 L 466 519 L 464 512 L 458 508 L 451 508 L 445 512 L 444 519 L 448 525 L 455 527 L 462 524 L 465 518 L 463 512 L 457 509 L 451 510 L 416 510 L 416 500 Z"/>
+
+  <!-- Utah -->
+  <path id="UT" class="state-path" d="M 266 272 L 266 262 L 266 252 L 266 242 L 266 232 L 266 222 L 266 212 L 266 202 L 266 194 L 280 196 L 294 197 L 308 198 L 322 198 L 336 199 L 350 200 L 364 201 L 378 202 L 392 203 L 406 204 L 416 204 L 416 214 L 416 224 L 416 234 L 416 244 L 416 254 L 416 264 L 416 268 L 393 268 L 363 268 L 333 268 L 303 268 L 283 268 L 266 272 Z"/>
+
+  <!-- Vermont -->
+  <path id="VT" class="state-path" d="M 822 132 L 819 124 L 818 115 L 819 107 L 823 101 L 828 98 L 834 98 L 839 102 L 841 109 L 840 117 L 836 124 L 830 129 Z"/>
+
+  <!-- Virginia -->
+  <path id="VA" class="state-path" d="M 740 262 L 745 253 L 749 244 L 751 236 L 749 228 L 744 222 L 737 218 L 730 216 L 722 218 L 716 222 L 712 229 L 710 237 L 712 245 L 716 252 L 722 257 L 730 260 L 737 261 Z M 708 272 L 713 264 L 719 258 L 726 256 L 733 258 L 738 264 L 739 272 L 737 280 L 731 285 L 724 287 L 716 285 L 711 279 Z"/>
+
+  <!-- Washington -->
+  <path id="WA" class="state-path" d="M 90 96 L 96 90 L 105 85 L 114 83 L 123 84 L 131 88 L 136 95 L 138 103 L 136 111 L 131 117 L 124 121 L 116 122 L 108 121 L 100 116 L 94 109 Z M 104 144 L 111 138 L 119 134 L 128 133 L 137 134 L 145 138 L 149 145 L 150 153 L 147 161 L 141 166 L 133 168 L 125 167 L 117 163 L 111 157 L 107 150 Z M 157 152 L 161 144 L 167 138 L 174 135 L 182 135 L 189 138 L 193 145 L 194 153 L 191 161 L 185 166 L 177 168 L 169 166 L 162 162 L 158 155 Z"/>
+
+  <!-- West Virginia -->
+  <path id="WV" class="state-path" d="M 714 248 L 719 240 L 724 234 L 730 231 L 737 232 L 742 237 L 743 245 L 741 253 L 735 258 L 728 260 L 721 258 L 716 253 Z M 701 268 L 705 260 L 711 254 L 718 252 L 724 256 L 727 263 L 725 271 L 720 277 L 713 279 L 706 276 Z"/>
+
+  <!-- Wisconsin -->
+  <path id="WI" class="state-path" d="M 546 140 L 540 132 L 533 127 L 525 124 L 517 124 L 509 126 L 502 131 L 498 138 L 497 146 L 499 154 L 503 162 L 509 167 L 517 170 L 525 170 L 533 167 L 540 162 L 544 154 L 545 147 Z"/>
+
+  <!-- Wyoming -->
+  <path id="WY" class="state-path" d="M 266 218 L 266 228 L 266 238 L 266 248 L 266 258 L 266 268 L 266 272 L 283 268 L 303 268 L 333 268 L 363 268 L 393 268 L 416 268 L 416 258 L 416 248 L 416 238 L 416 228 L 416 218 L 416 208 L 416 204 L 392 203 L 378 202 L 364 201 L 350 200 L 336 199 L 322 198 L 308 198 L 294 197 L 280 196 L 266 194 L 266 204 L 266 212 Z"/>
+
+  <!-- Inset region labels -->
+  <rect x="10" y="505" width="215" height="90" rx="10" fill="rgba(255,255,255,0.48)" stroke="#a78bfa" stroke-width="1.5"/>
+  <text x="18" y="519" font-size="11" fill="#4c1d95" font-family="Comic Sans MS, cursive" font-weight="bold">Alaska</text>
+  <rect x="228" y="505" width="152" height="90" rx="10" fill="rgba(255,255,255,0.48)" stroke="#a78bfa" stroke-width="1.5"/>
+  <text x="236" y="519" font-size="11" fill="#4c1d95" font-family="Comic Sans MS, cursive" font-weight="bold">Hawaii</text>
+
+  <!-- ── State Abbreviation Labels ── -->
+  <g id="state-labels" font-family="Comic Sans MS, cursive" font-size="9" font-weight="bold"
+     fill="#1e1b4b" text-anchor="middle" pointer-events="none">
+    <text x="589" y="412">AL</text>
+    <text x="140" y="548">AK</text>
+    <text x="214" y="440">AZ</text>
+    <text x="535" y="340">AR</text>
+    <text x="112" y="310">CA</text>
+    <text x="341" y="320">CO</text>
+    <text x="831" y="191">CT</text>
+    <text x="803" y="206">DE</text>
+    <text x="642" y="476">FL</text>
+    <text x="596" y="416">GA</text>
+    <text x="290" y="562">HI</text>
+    <text x="222" y="192">ID</text>
+    <text x="535" y="300">IL</text>
+    <text x="627" y="210">IN</text>
+    <text x="476" y="196">IA</text>
+    <text x="341" y="308">KS</text>
+    <text x="608" y="272">KY</text>
+    <text x="495" y="400">LA</text>
+    <text x="874" y="130">ME</text>
+    <text x="787" y="227">MD</text>
+    <text x="852" y="170">MA</text>
+    <text x="622" y="165">MI</text>
+    <text x="472" y="110">MN</text>
+    <text x="576" y="450">MS</text>
+    <text x="535" y="330">MO</text>
+    <text x="306" y="90">MT</text>
+    <text x="341" y="244">NE</text>
+    <text x="199" y="330">NV</text>
+    <text x="857" y="122">NH</text>
+    <text x="799" y="198">NJ</text>
+    <text x="341" y="424">NM</text>
+    <text x="770" y="172">NY</text>
+    <text x="666" y="280">NC</text>
+    <text x="306" y="148">ND</text>
+    <text x="668" y="184">OH</text>
+    <text x="466" y="384">OK</text>
+    <text x="140" y="194">OR</text>
+    <text x="787" y="190">PA</text>
+    <text x="835" y="192">RI</text>
+    <text x="682" y="318">SC</text>
+    <text x="306" y="190">SD</text>
+    <text x="620" y="316">TN</text>
+    <text x="452" y="450">TX</text>
+    <text x="341" y="370">UT</text>
+    <text x="827" y="114">VT</text>
+    <text x="722" y="252">VA</text>
+    <text x="120" y="132">WA</text>
+    <text x="717" y="268">WV</text>
+    <text x="517" y="148">WI</text>
+    <text x="341" y="240">WY</text>
+  </g>
+</svg>
+</div>
+
+<!-- Info Panel -->
+<div id="info-panel">
+  <button id="info-close" onclick="closeInfo()">✕</button>
+  <div id="info-emoji">🗺️</div>
+  <div id="info-name">State</div>
+  <div id="info-nick">Nickname</div>
+  <div class="info-row"><span class="info-lbl">🏛️ Capital:</span><span id="info-capital">—</span></div>
+  <div class="info-row"><span class="info-lbl">🐦 Bird:</span><span id="info-bird">—</span></div>
+  <div id="info-fact">Fun fact!</div>
+</div>
+
+<!-- Celebration Overlay -->
+<div id="celebration">
+  <div id="cel-card">
+    <div id="cel-emoji">🎉</div>
+    <div id="cel-title">Amazing!</div>
+    <div id="cel-score">You got — out of 10!</div>
+    <button id="play-again" onclick="startQuiz()">Play Again! 🎯</button>
+    <button id="stop-cel" onclick="closeCelebration()">All Done</button>
+  </div>
+</div>
+
+<div id="tip"></div>
+
+<script>
+// ─────────────────────────────────────────────────
+// STATE DATA — all 50 states
+// ─────────────────────────────────────────────────
+const stateData = {
+  AL:{ name:"Alabama",        capital:"Montgomery",    nick:"The Yellowhammer State",    bird:"Yellowhammer",             fact:"Alabama has over 1,500 caves to explore underground!",                                                       emoji:"🏛️" },
+  AK:{ name:"Alaska",         capital:"Juneau",        nick:"The Last Frontier",         bird:"Willow Ptarmigan",          fact:"Alaska has more coastline than all other US states combined — over 33,000 miles!",                            emoji:"🐻" },
+  AZ:{ name:"Arizona",        capital:"Phoenix",       nick:"The Grand Canyon State",    bird:"Cactus Wren",              fact:"The Grand Canyon is over a mile deep! It took the Colorado River millions of years to carve it.",               emoji:"🌵" },
+  AR:{ name:"Arkansas",       capital:"Little Rock",   nick:"The Natural State",         bird:"Mockingbird",              fact:"Arkansas is the only US state where you can dig for diamonds and keep them if you find any!",                    emoji:"💎" },
+  CA:{ name:"California",     capital:"Sacramento",    nick:"The Golden State",          bird:"California Quail",         fact:"California grows more than half of all the fruits, veggies, and nuts in the entire USA!",                        emoji:"🌉" },
+  CO:{ name:"Colorado",       capital:"Denver",        nick:"The Centennial State",      bird:"Lark Bunting",             fact:"Colorado has 58 mountain peaks over 14,000 feet tall — hikers call them 'fourteeners'!",                         emoji:"⛰️" },
+  CT:{ name:"Connecticut",    capital:"Hartford",      nick:"The Constitution State",    bird:"American Robin",           fact:"Connecticut is so small you could fit it inside Alaska over 100 times, but it's packed with history!",           emoji:"⚓" },
+  DE:{ name:"Delaware",       capital:"Dover",         nick:"The First State",           bird:"Blue Hen Chicken",         fact:"Delaware was the very first state to ratify the US Constitution in 1787!",                                       emoji:"🦅" },
+  FL:{ name:"Florida",        capital:"Tallahassee",   nick:"The Sunshine State",        bird:"Mockingbird",              fact:"Florida gets more lightning strikes than any other US state — it's the lightning capital of America!",            emoji:"🌴" },
+  GA:{ name:"Georgia",        capital:"Atlanta",       nick:"The Peach State",           bird:"Brown Thrasher",           fact:"Georgia is the largest state east of the Mississippi, and it grows the most peanuts in the USA!",                emoji:"🍑" },
+  HI:{ name:"Hawaii",         capital:"Honolulu",      nick:"The Aloha State",           bird:"Nene (Hawaiian Goose)",    fact:"Hawaii is the only US state made entirely of islands — 132 islands in the Pacific Ocean!",                       emoji:"🌺" },
+  ID:{ name:"Idaho",          capital:"Boise",         nick:"The Gem State",             bird:"Mountain Bluebird",        fact:"Idaho grows about one-third of all the potatoes eaten in the USA — that's a LOT of french fries!",                emoji:"🥔" },
+  IL:{ name:"Illinois",       capital:"Springfield",   nick:"The Prairie State",         bird:"Northern Cardinal",        fact:"Chicago's river actually flows BACKWARDS! Engineers reversed the Chicago River in 1900.",                         emoji:"🏙️" },
+  IN:{ name:"Indiana",        capital:"Indianapolis",  nick:"The Hoosier State",         bird:"Northern Cardinal",        fact:"The Indianapolis 500 car race happens in Indiana every year — cars zoom around at over 200 mph!",                 emoji:"🏎️" },
+  IA:{ name:"Iowa",           capital:"Des Moines",    nick:"The Hawkeye State",         bird:"Eastern Goldfinch",        fact:"Iowa grows so much corn that ears lined up end-to-end would reach around the Earth several times!",               emoji:"🌽" },
+  KS:{ name:"Kansas",         capital:"Topeka",        nick:"The Sunflower State",       bird:"Western Meadowlark",       fact:"The geographic center of the entire continental USA is right in Kansas — it's the heart of America!",             emoji:"🌻" },
+  KY:{ name:"Kentucky",       capital:"Frankfort",     nick:"The Bluegrass State",       bird:"Northern Cardinal",        fact:"Mammoth Cave in Kentucky is the world's longest known cave system — over 400 miles of tunnels!",                  emoji:"🐎" },
+  LA:{ name:"Louisiana",      capital:"Baton Rouge",   nick:"The Pelican State",         bird:"Brown Pelican",            fact:"Louisiana is slowly sinking, and parts of New Orleans are already below sea level!",                              emoji:"🎷" },
+  ME:{ name:"Maine",          capital:"Augusta",       nick:"The Pine Tree State",       bird:"Black-capped Chickadee",   fact:"Maine is the only US state that shares its border with just ONE other state — New Hampshire!",                    emoji:"🦞" },
+  MD:{ name:"Maryland",       capital:"Annapolis",     nick:"The Old Line State",        bird:"Baltimore Oriole",         fact:"Maryland's Chesapeake Bay is the largest estuary in the US and is famous for blue crabs!",                       emoji:"🦀" },
+  MA:{ name:"Massachusetts",  capital:"Boston",        nick:"The Bay State",             bird:"Black-capped Chickadee",   fact:"Massachusetts had the first public school in America, and Harvard is the oldest US university!",                  emoji:"🎓" },
+  MI:{ name:"Michigan",       capital:"Lansing",       nick:"The Great Lakes State",     bird:"American Robin",           fact:"Michigan is the only US state made of two separate peninsulas, touching 4 of the 5 Great Lakes!",                emoji:"🚗" },
+  MN:{ name:"Minnesota",      capital:"Saint Paul",    nick:"The Land of 10,000 Lakes",  bird:"Common Loon",              fact:"Minnesota actually has over 11,000 lakes — even more than the nickname says!",                                    emoji:"🎣" },
+  MS:{ name:"Mississippi",    capital:"Jackson",       nick:"The Magnolia State",        bird:"Mockingbird",              fact:"The mighty Mississippi River forms most of Mississippi's western border — it's one of the world's great rivers!", emoji:"🎶" },
+  MO:{ name:"Missouri",       capital:"Jefferson City",nick:"The Show-Me State",         bird:"Eastern Bluebird",         fact:"Missouri's Gateway Arch in St. Louis is the tallest man-made monument in the USA at 630 feet!",                  emoji:"⛩️" },
+  MT:{ name:"Montana",        capital:"Helena",        nick:"Big Sky Country",           bird:"Western Meadowlark",       fact:"Montana has three times more cattle than people! And Glacier National Park has over 700 miles of trails.",        emoji:"🦌" },
+  NE:{ name:"Nebraska",       capital:"Lincoln",       nick:"The Cornhusker State",      bird:"Western Meadowlark",       fact:"Nebraska has more miles of river than any other US state — water flows everywhere across the Great Plains!",      emoji:"🌾" },
+  NV:{ name:"Nevada",         capital:"Carson City",   nick:"The Silver State",          bird:"Mountain Bluebird",        fact:"Nevada gets less rain than any other US state, making it the driest state in the nation!",                        emoji:"🎰" },
+  NH:{ name:"New Hampshire",  capital:"Concord",       nick:"The Granite State",         bird:"Purple Finch",             fact:"New Hampshire was the first US state to have its own government, even before the USA was officially created!",     emoji:"🏔️" },
+  NJ:{ name:"New Jersey",     capital:"Trenton",       nick:"The Garden State",          bird:"Eastern Goldfinch",        fact:"New Jersey is the most densely populated state — more people per square mile than anywhere else in the US!",      emoji:"🌊" },
+  NM:{ name:"New Mexico",     capital:"Santa Fe",      nick:"The Land of Enchantment",   bird:"Greater Roadrunner",       fact:"New Mexico has more UFO sightings than almost any other state! The Roswell incident happened here in 1947.",       emoji:"👽" },
+  NY:{ name:"New York",       capital:"Albany",        nick:"The Empire State",          bird:"Eastern Bluebird",         fact:"The Statue of Liberty was a gift from France in 1886 — Lady Liberty is 305 feet tall from ground to torch!",      emoji:"🗽" },
+  NC:{ name:"North Carolina", capital:"Raleigh",       nick:"The Tar Heel State",        bird:"Northern Cardinal",        fact:"The Wright Brothers made the world's first airplane flight in North Carolina at Kitty Hawk in 1903!",              emoji:"✈️" },
+  ND:{ name:"North Dakota",   capital:"Bismarck",      nick:"The Peace Garden State",    bird:"Western Meadowlark",       fact:"North Dakota grows more sunflowers than any other state — fields of yellow flowers stretch for miles!",            emoji:"🌼" },
+  OH:{ name:"Ohio",           capital:"Columbus",      nick:"The Buckeye State",         bird:"Northern Cardinal",        fact:"Ohio has produced more US presidents than any other state — eight presidents were born there!",                    emoji:"🚀" },
+  OK:{ name:"Oklahoma",       capital:"Oklahoma City", nick:"The Sooner State",          bird:"Scissor-tailed Flycatcher",fact:"Oklahoma has more tornadoes per square mile than anywhere else on Earth — it's in 'Tornado Alley'!",             emoji:"🌪️" },
+  OR:{ name:"Oregon",         capital:"Salem",         nick:"The Beaver State",          bird:"Western Meadowlark",       fact:"Crater Lake in Oregon is the deepest lake in the USA at nearly 2,000 feet deep — and stunningly blue!",           emoji:"🌲" },
+  PA:{ name:"Pennsylvania",   capital:"Harrisburg",    nick:"The Keystone State",        bird:"Ruffed Grouse",            fact:"Both the US Constitution AND the Declaration of Independence were written in Philadelphia, Pennsylvania!",         emoji:"🔔" },
+  RI:{ name:"Rhode Island",   capital:"Providence",    nick:"The Ocean State",           bird:"Rhode Island Red",         fact:"Rhode Island is the smallest US state — you could fit 425 Rhode Islands inside Alaska!",                         emoji:"⚓" },
+  SC:{ name:"South Carolina", capital:"Columbia",      nick:"The Palmetto State",        bird:"Carolina Wren",            fact:"South Carolina actually produces more peaches than Georgia does — despite Georgia's 'Peach State' nickname!",      emoji:"🌴" },
+  SD:{ name:"South Dakota",   capital:"Pierre",        nick:"The Mount Rushmore State",  bird:"Ring-necked Pheasant",     fact:"Mount Rushmore took 14 years to carve — workers used dynamite to blast the mountain!",                           emoji:"🗿" },
+  TN:{ name:"Tennessee",      capital:"Nashville",     nick:"The Volunteer State",       bird:"Mockingbird",              fact:"Nashville, Tennessee is the country music capital of the world with hundreds of live music venues!",               emoji:"🎸" },
+  TX:{ name:"Texas",          capital:"Austin",        nick:"The Lone Star State",       bird:"Mockingbird",              fact:"Texas is so big that if it were a country, it would be the 40th largest country in the entire world! Yeehaw!",   emoji:"🤠" },
+  UT:{ name:"Utah",           capital:"Salt Lake City",nick:"The Beehive State",         bird:"California Gull",          fact:"Utah has five amazing national parks called 'The Mighty Five' — each one is jaw-droppingly beautiful!",           emoji:"🏜️" },
+  VT:{ name:"Vermont",        capital:"Montpelier",    nick:"The Green Mountain State",  bird:"Hermit Thrush",            fact:"Vermont produces the most maple syrup in the USA — over 2 million gallons every single year!",                     emoji:"🍁" },
+  VA:{ name:"Virginia",       capital:"Richmond",      nick:"The Old Dominion",          bird:"Northern Cardinal",        fact:"Virginia is called the 'Mother of Presidents' — 8 US presidents were born there, more than any other state!",     emoji:"🏛️" },
+  WA:{ name:"Washington",     capital:"Olympia",       nick:"The Evergreen State",       bird:"Willow Goldfinch",         fact:"Washington State produces more apples than any other state — billions of apples every single year!",               emoji:"🍎" },
+  WV:{ name:"West Virginia",  capital:"Charleston",    nick:"The Mountain State",        bird:"Northern Cardinal",        fact:"West Virginia was formed during the Civil War when its counties voted to stay in the Union!",                       emoji:"⛏️" },
+  WI:{ name:"Wisconsin",      capital:"Madison",       nick:"The Badger State",          bird:"American Robin",           fact:"Wisconsin produces more cheese than any other state — one-quarter of all US cheese comes from there!",             emoji:"🧀" },
+  WY:{ name:"Wyoming",        capital:"Cheyenne",      nick:"The Equality State",        bird:"Western Meadowlark",       fact:"Yellowstone National Park in Wyoming was the FIRST national park in the entire world, created in 1872!",           emoji:"🦬" }
+};
+
+// ─────────────────────────────────────────────────
+// COLORS — 50 distinct pastels
+// ─────────────────────────────────────────────────
+const palette = [
+  "#fca5a5","#fdba74","#fcd34d","#86efac","#67e8f9","#a5b4fc","#f9a8d4","#c4b5fd",
+  "#6ee7b7","#7dd3fc","#fda4af","#fb923c","#facc15","#4ade80","#22d3ee","#818cf8",
+  "#f472b6","#e879f9","#34d399","#38bdf8","#fca5a5","#fed7aa","#fef08a","#bbf7d0",
+  "#bae6fd","#c7d2fe","#fbcfe8","#e9d5ff","#a7f3d0","#bfdbfe","#f87171","#fb923c",
+  "#fbbf24","#4ade80","#2dd4bf","#60a5fa","#e879f9","#a78bfa","#34d399","#38bdf8",
+  "#ff9a9e","#ffecd2","#fcb69f","#a18cd1","#fbc2eb","#84fab0","#8fd3f4","#f6d365",
+  "#fda085","#f093fb"
+];
+
+const stateIds = Object.keys(stateData);
+const colorMap = {};
+stateIds.forEach((id, i) => { colorMap[id] = palette[i % palette.length]; });
+
+function applyColors() {
+  stateIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.style.fill = colorMap[id]; }
+  });
+}
+
+// ─────────────────────────────────────────────────
+// AUDIO
+// ─────────────────────────────────────────────────
+let _ctx = null;
+function ctx() {
+  if (!_ctx) _ctx = new (window.AudioContext || window.webkitAudioContext)();
+  if (_ctx.state === 'suspended') _ctx.resume();
+  return _ctx;
+}
+function tone(freq, start, dur, vol, type='sine') {
+  try {
+    const o = ctx().createOscillator(), g = ctx().createGain();
+    o.type = type; o.frequency.value = freq;
+    g.gain.setValueAtTime(vol, ctx().currentTime + start);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx().currentTime + start + dur);
+    o.connect(g); g.connect(ctx().destination);
+    o.start(ctx().currentTime + start); o.stop(ctx().currentTime + start + dur + 0.05);
+  } catch(e) {}
+}
+function playCorrect() { tone(523,0,.15,.15); tone(659,.12,.15,.15); tone(784,.24,.18,.12); tone(1047,.36,.25,.10); }
+function playWrong()   { tone(200,0,.18,.12,'sawtooth'); tone(160,.16,.22,.10,'sawtooth'); }
+function playPop()     { tone(480,0,.10,.08); tone(580,.09,.10,.06); }
+
+// ─────────────────────────────────────────────────
+// INFO PANEL
+// ─────────────────────────────────────────────────
+function showInfo(id) {
+  const d = stateData[id]; if (!d) return;
+  document.getElementById('info-emoji').textContent   = d.emoji;
+  document.getElementById('info-name').textContent    = d.name;
+  document.getElementById('info-nick').textContent    = '"' + d.nick + '"';
+  document.getElementById('info-capital').textContent = d.capital;
+  document.getElementById('info-bird').textContent    = d.bird;
+  document.getElementById('info-fact').textContent    = '⭐ ' + d.fact;
+  document.getElementById('info-panel').classList.add('open');
+  playPop();
+}
+function closeInfo() { document.getElementById('info-panel').classList.remove('open'); }
+
+// ─────────────────────────────────────────────────
+// QUIZ
+// ─────────────────────────────────────────────────
+let quizActive = false, quizTarget = null, quizIdx = 0, quizScore = 0, quizQueue = [], quizLocked = false;
+const QLEN = 10;
+
+function shuffle(a) {
+  const b = [...a];
+  for (let i = b.length-1; i>0; i--) { const j = Math.floor(Math.random()*(i+1)); [b[i],b[j]]=[b[j],b[i]]; }
+  return b;
+}
+function startQuiz() {
+  closeInfo();
+  closeCelebration();
+  quizActive = true; quizScore = 0; quizIdx = 0; quizLocked = false;
+  quizQueue = shuffle(stateIds).slice(0, QLEN);
+  document.getElementById('score-display').style.display = 'flex';
+  document.getElementById('star-count').textContent = '0';
+  document.getElementById('quiz-btn').textContent = '🛑 Stop Quiz';
+  document.getElementById('quiz-btn').onclick = stopQuiz;
+  document.getElementById('quiz-panel').classList.add('active');
+  nextQ();
+}
+function stopQuiz() {
+  quizActive = false;
+  clearTarget();
+  document.getElementById('quiz-panel').classList.remove('active');
+  document.getElementById('quiz-btn').textContent = '🎯 Quiz Me!';
+  document.getElementById('quiz-btn').onclick = startQuiz;
+  document.getElementById('score-display').style.display = 'none';
+}
+function nextQ() {
+  if (quizIdx >= QLEN) { endQuiz(); return; }
+  clearTarget();
+  quizLocked = false;
+  quizTarget = quizQueue[quizIdx];
+  const el = document.getElementById(quizTarget);
+  if (el) el.classList.add('quiz-target');
+  document.getElementById('quiz-state-nm').textContent = stateData[quizTarget].name;
+  document.getElementById('quiz-feedback').textContent = '';
+  document.getElementById('q-num').textContent = quizIdx + 1;
+}
+function clearTarget() {
+  if (quizTarget) {
+    const el = document.getElementById(quizTarget);
+    if (el) { el.classList.remove('quiz-target','correct-flash','wrong-flash'); }
+  }
+}
+function handleQuizClick(id) {
+  if (!quizActive || quizLocked) return;
+  if (id === quizTarget) {
+    quizScore++;
+    quizLocked = true;
+    document.getElementById('star-count').textContent = quizScore;
+    const el = document.getElementById(id);
+    if (el) { el.classList.remove('quiz-target'); el.classList.add('correct-flash'); }
+    document.getElementById('quiz-feedback').innerHTML = '<span style="color:#15803d">✅ Yes! Great job!</span>';
+    playCorrect();
+    quizIdx++;
+    setTimeout(nextQ, 1300);
+  } else {
+    const el = document.getElementById(id);
+    if (el) { el.classList.add('wrong-flash'); setTimeout(()=>el.classList.remove('wrong-flash'),600); }
+    document.getElementById('quiz-feedback').innerHTML = '<span style="color:#dc2626">❌ Try again!</span>';
+    playWrong();
+  }
+}
+function endQuiz() {
+  quizActive = false;
+  clearTarget();
+  document.getElementById('quiz-panel').classList.remove('active');
+  document.getElementById('quiz-btn').textContent = '🎯 Quiz Me!';
+  document.getElementById('quiz-btn').onclick = startQuiz;
+  const pct = quizScore / QLEN;
+  let em, tt;
+  if (pct===1)     { em='🏆'; tt='PERFECT! You know every state, Addie!'; }
+  else if (pct>=.8){ em='🌟'; tt='Amazing job, Addie! You\'re a star!'; }
+  else if (pct>=.6){ em='🎉'; tt='Great work, Addie! Keep exploring!'; }
+  else             { em='💪'; tt='Good try! Practice makes perfect, Addie!'; }
+  document.getElementById('cel-emoji').textContent = em;
+  document.getElementById('cel-title').textContent = tt;
+  const stars = '⭐'.repeat(quizScore) + '☆'.repeat(QLEN - quizScore);
+  document.getElementById('cel-score').innerHTML = `You got <strong>${quizScore}</strong> out of ${QLEN}!<br><span style="font-size:1.4em">${stars}</span>`;
+  document.getElementById('celebration').classList.add('show');
+  if (pct >= 0.6) confetti();
+}
+function closeCelebration() {
+  document.getElementById('celebration').classList.remove('show');
+  killConfetti();
+}
+
+// ─────────────────────────────────────────────────
+// CONFETTI
+// ─────────────────────────────────────────────────
+let cPieces = [];
+function confetti() {
+  const cols = ['#fca5a5','#fdba74','#fcd34d','#86efac','#67e8f9','#a5b4fc','#f9a8d4'];
+  for (let i=0;i<90;i++) {
+    setTimeout(()=>{
+      const el = document.createElement('div');
+      el.className = 'confetti';
+      const sz = 7 + Math.random()*9;
+      el.style.cssText = `left:${Math.random()*100}vw;width:${sz}px;height:${sz}px;background:${cols[Math.floor(Math.random()*cols.length)]};border-radius:${Math.random()>.5?'50%':'3px'}`;
+      const dur = 1.6 + Math.random()*1.6;
+      el.style.animation = `cfall ${dur}s linear forwards`;
+      document.body.appendChild(el);
+      cPieces.push(el);
+      setTimeout(()=>{ el.remove(); cPieces=cPieces.filter(p=>p!==el); }, dur*1000+100);
+    }, Math.random()*900);
+  }
+}
+function killConfetti() { cPieces.forEach(e=>e.remove()); cPieces=[]; }
+
+// ─────────────────────────────────────────────────
+// CLICK / TOUCH on map
+// ─────────────────────────────────────────────────
+const tip = document.getElementById('tip');
+document.querySelectorAll('.state-path').forEach(path => {
+  const id = path.id;
+  if (!stateData[id]) return;
+  path.addEventListener('click', e => {
+    e.stopPropagation();
+    if (quizActive) handleQuizClick(id);
+    else showInfo(id);
+  });
+  path.addEventListener('touchstart', e => {
+    e.preventDefault();
+    if (quizActive) handleQuizClick(id);
+    else showInfo(id);
+  }, { passive: false });
+  path.addEventListener('mouseenter', () => { tip.textContent = stateData[id].name; tip.style.display='block'; });
+  path.addEventListener('mousemove', e => { tip.style.left=(e.clientX+14)+'px'; tip.style.top=(e.clientY-32)+'px'; });
+  path.addEventListener('mouseleave', () => { tip.style.display='none'; });
+});
+
+// Close info when clicking the map background
+document.getElementById('us-map').addEventListener('click', e => {
+  if (e.target.id==='us-map' || e.target.tagName==='rect' && e.target.getAttribute('fill')==='#bfdbfe') closeInfo();
+});
+document.getElementById('celebration').addEventListener('click', e => {
+  if (e.target.id==='celebration') closeCelebration();
+});
+
+applyColors();
+</script>
+</body>
+</html>
