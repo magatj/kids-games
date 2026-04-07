@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -6,19 +6,20 @@
   <title>Addie's Atlas</title>
   <style>
     :root {
-      --bg-a: #09111f;
-      --bg-b: #132743;
-      --panel: rgba(13, 24, 40, 0.86);
-      --panel-border: rgba(148, 163, 184, 0.18);
-      --ink: #e5eef9;
-      --muted: #9fb3ca;
-      --accent: #6ee7f9;
-      --accent-strong: #38bdf8;
+      --bg-a: #69d4ff;
+      --bg-b: #b8f0ff;
+      --bg-c: #fff1b8;
+      --panel: rgba(255, 255, 255, 0.86);
+      --panel-border: rgba(72, 141, 184, 0.18);
+      --ink: #1d3557;
+      --muted: #537392;
+      --accent: #ff5f8f;
+      --accent-strong: #2aa7ff;
       --correct: #4ade80;
       --wrong: #fb7185;
       --hint: #fbbf24;
-      --map-shell: #0d1829;
-      --shadow: 0 28px 60px rgba(0, 0, 0, 0.36);
+      --map-shell: #f7fdff;
+      --shadow: 0 22px 48px rgba(50, 113, 150, 0.2);
     }
 
     * {
@@ -28,11 +29,13 @@
     body {
       margin: 0;
       min-height: 100vh;
-      font-family: "Aptos", "Trebuchet MS", "Segoe UI", sans-serif;
+      font-family: "Trebuchet MS", "Arial Rounded MT Bold", "Segoe UI", sans-serif;
       color: var(--ink);
       background:
-        radial-gradient(circle at top, rgba(110, 231, 249, 0.16), transparent 26%),
-        linear-gradient(180deg, var(--bg-b), var(--bg-a) 72%);
+        radial-gradient(circle at top, rgba(255,255,255,0.65), transparent 24%),
+        radial-gradient(circle at 20% 10%, rgba(255,255,255,0.4), transparent 14%),
+        radial-gradient(circle at 80% 16%, rgba(255,255,255,0.35), transparent 13%),
+        linear-gradient(180deg, var(--bg-b), var(--bg-a) 60%, var(--bg-c));
     }
 
     .shell {
@@ -61,7 +64,9 @@
       flex: 1 1 520px;
       border-radius: 28px;
       padding: 22px 24px;
-      background: linear-gradient(180deg, rgba(15, 28, 48, 0.92), rgba(10, 20, 34, 0.88));
+      background:
+        radial-gradient(circle at top right, rgba(255,255,255,0.55), transparent 28%),
+        linear-gradient(160deg, rgba(255,255,255,0.95), rgba(255,244,214,0.92));
     }
 
     .hero h1,
@@ -96,7 +101,7 @@
     }
 
     .hero h1 span {
-      color: var(--accent);
+      color: var(--accent-strong);
     }
 
     .hero p {
@@ -117,7 +122,7 @@
     .stat {
       border-radius: 24px;
       padding: 14px 16px;
-      background: linear-gradient(180deg, rgba(13, 26, 44, 0.92), rgba(10, 18, 31, 0.9));
+      background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(245,251,255,0.9));
       text-align: center;
     }
 
@@ -133,7 +138,7 @@
       display: block;
       margin-top: 6px;
       font-size: 1.9rem;
-      color: white;
+      color: var(--ink);
     }
 
     .game {
@@ -145,7 +150,7 @@
 
     .panel {
       border-radius: 30px;
-      background: linear-gradient(180deg, rgba(12, 22, 36, 0.92), rgba(8, 15, 26, 0.9));
+      background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(246,252,255,0.9));
       overflow: hidden;
     }
 
@@ -183,9 +188,9 @@
     .mode-chip {
       padding: 10px 14px;
       border-radius: 999px;
-      background: rgba(56, 189, 248, 0.12);
-      border: 1px solid rgba(56, 189, 248, 0.18);
-      color: var(--accent);
+      background: rgba(255, 95, 143, 0.12);
+      border: 1px solid rgba(255, 95, 143, 0.18);
+      color: #cf2e68;
       font-weight: 800;
       letter-spacing: 0.04em;
       text-transform: uppercase;
@@ -196,9 +201,9 @@
       border-radius: 24px;
       padding: 16px;
       background:
-        radial-gradient(circle at top, rgba(110, 231, 249, 0.08), transparent 24%),
-        linear-gradient(180deg, #0d1a2c, #08111d);
-      border: 1px solid rgba(148, 163, 184, 0.12);
+        radial-gradient(circle at top, rgba(255,255,255,0.7), transparent 24%),
+        linear-gradient(180deg, #f8fdff, #eefbff);
+      border: 1px solid rgba(130, 190, 220, 0.3);
     }
 
     .usa-map {
@@ -224,20 +229,23 @@
 
     .usa-map .quiz-state:hover,
     .usa-map .quiz-state:focus-visible {
-      filter: brightness(1.08) saturate(1.08);
-      transform: scale(1.015);
+      filter: brightness(1.08) saturate(1.12);
+      transform: scale(1.02);
     }
 
     .usa-map .quiz-state.correct {
       fill: var(--correct) !important;
+      filter: drop-shadow(0 0 8px rgba(74, 222, 128, 0.6));
     }
 
     .usa-map .quiz-state.wrong {
       fill: var(--wrong) !important;
+      filter: drop-shadow(0 0 8px rgba(251, 113, 133, 0.45));
     }
 
     .usa-map .quiz-state.hint {
       fill: var(--hint) !important;
+      filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.55));
     }
 
     .usa-map .borders {
@@ -260,15 +268,15 @@
     .block {
       padding: 18px;
       border-radius: 24px;
-      background: rgba(13, 24, 40, 0.76);
-      border: 1px solid rgba(148, 163, 184, 0.12);
+      background: rgba(255,255,255,0.82);
+      border: 1px solid rgba(130, 190, 220, 0.22);
       margin-bottom: 14px;
     }
 
     .block h3 {
       margin-bottom: 8px;
       font-size: 1.18rem;
-      color: white;
+      color: var(--ink);
     }
 
     .block p {
@@ -294,19 +302,19 @@
       font: inherit;
       font-weight: 800;
       cursor: pointer;
-      color: #04111d;
-      background: linear-gradient(180deg, #8be4f6, #38bdf8);
+      color: white;
+      background: linear-gradient(180deg, #ff77a4, #ff4f8a);
       box-shadow: inset 0 -4px 0 rgba(0,0,0,0.16);
     }
 
     button.secondary {
-      color: white;
-      background: linear-gradient(180deg, #223956, #16273d);
+      color: var(--ink);
+      background: linear-gradient(180deg, #ffffff, #dff4ff);
     }
 
     button.warn {
-      color: #241300;
-      background: linear-gradient(180deg, #ffd98a, #fbbf24);
+      color: #533000;
+      background: linear-gradient(180deg, #ffe27a, #f5bc1a);
     }
 
     button:active {
@@ -359,12 +367,12 @@
     <header class="topbar">
       <section class="hero">
         <div class="eyebrow">Addie's Personalized Study Game</div>
-        <h1>Addie's <span>Atlas</span></h1>
-        <p>A cleaner, more realistic U.S. map quiz built around actual state outlines. Use it in state mode to build location memory, or switch to capitals mode for a harder round.</p>
+        <h1>Addie's <span>Map Adventure</span></h1>
+        <p>A bright U.S. map game made just for Addie. Tap real state shapes, collect points, build a streak, and switch on capitals when she wants a bigger challenge.</p>
       </section>
 
       <section class="stats">
-        <div class="stat"><span>Score</span><strong id="score">0</strong></div>
+        <div class="stat"><span>Stars</span><strong id="score">0</strong></div>
         <div class="stat"><span>Round</span><strong id="round">1</strong></div>
         <div class="stat"><span>Streak</span><strong id="streak">0</strong></div>
         <div class="stat"><span>Mode</span><strong id="modeLabel">States</strong></div>
@@ -376,9 +384,9 @@
         <div class="panel-head">
           <div>
             <h2>United States Map</h2>
-            <p>The quiz now uses real state outlines instead of drawn boxes.</p>
+            <p>Tap the colorful states to explore the real U.S. map.</p>
           </div>
-          <div class="mode-chip" id="modeChip">State Mode</div>
+          <div class="mode-chip" id="modeChip">State Hunt</div>
         </div>
         <div class="map-wrap">
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 959 593" class="usa-map" id="usaMap" role="img" aria-labelledby="mapTitle">
@@ -682,41 +690,41 @@ Place this code in the empty space below. */
       <aside class="panel side-panel">
         <div class="panel-head">
           <div>
-            <h2>Atlas Challenge</h2>
-            <p>Built for Addie, but styled more like a study app for a teen.</p>
+            <h2>Addie's Challenge</h2>
+            <p>Read the clue, then tap the right place on the map.</p>
           </div>
           <button class="warn" id="toggleModeBtn">Capitals: Off</button>
         </div>
 
         <section class="block">
-          <h3 id="promptTitle">Locate the state</h3>
+          <h3 id="promptTitle">Find the state</h3>
           <p id="promptText">Tap the requested state on the map.</p>
-          <div class="meta-line" id="hoverState">Hover a state to preview its name.</div>
+          <div class="meta-line" id="hoverState">Tap a state to explore it.</div>
         </section>
 
         <div class="button-grid">
-          <button id="showAnswerBtn">Reveal</button>
-          <button class="secondary" id="nextBtn">Next Prompt</button>
+          <button id="showAnswerBtn">Show Me</button>
+          <button class="secondary" id="nextBtn">Next Round</button>
           <button class="secondary" id="restartBtn">Restart</button>
-          <button class="secondary" id="shuffleBtn">Reset Score</button>
+          <button class="secondary" id="shuffleBtn">Fresh Start</button>
         </div>
 
         <section class="block">
-          <h3>Feedback</h3>
-          <p id="feedback">The map is ready. Start by finding the state named in the prompt.</p>
+          <h3>Coach Corner</h3>
+          <p id="feedback">The map is ready. Start by finding the state named in the clue.</p>
         </section>
 
         <section class="block">
-          <h3>Capital Notes</h3>
-          <p id="capitalHint">When capitals mode is off, the prompt uses the state name. When capitals mode is on, the prompt gives the capital city instead.</p>
+          <h3>Capital Helper</h3>
+          <p id="capitalHint">When capitals mode is off, the clue uses the state name. When capitals mode is on, the clue gives the capital city instead.</p>
           <div class="status-line">
-            <span>Current answer</span>
+            <span>Target state</span>
             <strong id="answerState">Waiting for round</strong>
-            <span id="answerCapital">Capital will appear here after a reveal or answer.</span>
+            <span id="answerCapital">The capital will show up after a reveal or answer.</span>
           </div>
         </section>
 
-        <p class="footer-note">This version is using a public-domain U.S. SVG map with actual state outlines, so it can look like the real country instead of a hand-built approximation.</p>
+        <p class="footer-note">This game uses a real U.S. SVG map, so Addie gets fun colors and kid-friendly feedback without losing the true shape of the country.</p>
       </aside>
     </section>
   </main>
@@ -775,7 +783,9 @@ Place this code in the empty space below. */
       wy: { name: "Wyoming", capital: "Cheyenne" }
     };
 
-    const palette = ["#58b7c7", "#f1a66a", "#88c36a", "#c986c8", "#6b99d4", "#f2cf63", "#78c9a3", "#ef7f8d"];
+    const palette = ["#58b7c7", "#f28d68", "#8ccf5d", "#a97be8", "#5ca5f4", "#f3cf55", "#5fd2a7", "#ff7fac"];
+    const yayLines = ["Awesome job", "Great work", "Nice one", "You got it", "Super map skills"];
+    const tryLines = ["Nice try", "Good guess", "Almost", "Keep going", "You are learning"];
     const stateCodes = Object.keys(stateInfo);
 
     const scoreEl = document.getElementById("score");
@@ -828,10 +838,10 @@ Place this code in the empty space below. */
         }
       });
       path.addEventListener("pointerenter", () => {
-        hoverStateEl.textContent = `${info.name} � ${info.capital}`;
+        hoverStateEl.textContent = `${info.name} · ${info.capital}`;
       });
       path.addEventListener("focus", () => {
-        hoverStateEl.textContent = `${info.name} � ${info.capital}`;
+        hoverStateEl.textContent = `${info.name} · ${info.capital}`;
       });
     });
 
@@ -859,24 +869,24 @@ Place this code in the empty space below. */
       roundEl.textContent = String(game.round);
       streakEl.textContent = String(game.streak);
       modeLabelEl.textContent = game.showCapitals ? "Capitals" : "States";
-      modeChipEl.textContent = game.showCapitals ? "Capital Mode" : "State Mode";
+      modeChipEl.textContent = game.showCapitals ? "Capital Quest" : "State Hunt";
       toggleModeBtn.textContent = game.showCapitals ? "Capitals: On" : "Capitals: Off";
       capitalHintEl.textContent = game.showCapitals
-        ? "Capitals mode is active. The prompt gives a capital city, and you identify the state that matches it."
-        : "States mode is active. The prompt gives the state name, which is best for memorizing the map layout first.";
+        ? "Capital mode is on. The clue gives a capital city, and Addie taps the state that matches it."
+        : "State mode is on. The clue gives the state name, which makes learning the map easier first.";
     }
 
     function setAnswerPanel(code, revealed) {
       if (!code) {
         answerStateEl.textContent = "Waiting for round";
-        answerCapitalEl.textContent = "Capital will appear here after a reveal or answer.";
+        answerCapitalEl.textContent = "The capital will appear after a reveal or answer.";
         return;
       }
       const info = stateInfo[code];
       answerStateEl.textContent = info.name;
       answerCapitalEl.textContent = revealed
         ? `Capital: ${info.capital}`
-        : "Capital hidden until you answer or reveal.";
+        : "Capital hidden until Addie answers or taps Show Me.";
     }
 
     function newRound() {
@@ -887,13 +897,13 @@ Place this code in the empty space below. */
       if (game.showCapitals) {
         promptTitle.textContent = "Match the capital";
         promptText.textContent = `Which state has the capital city ${info.capital}?`;
-        feedbackEl.textContent = `Use the map to match the capital ${info.capital} to its state.`;
+        feedbackEl.textContent = `New round. Find the state whose capital is ${info.capital}.`;
       } else {
-        promptTitle.textContent = "Locate the state";
+        promptTitle.textContent = "Find the state";
         promptText.textContent = `Find ${info.name} on the map.`;
-        feedbackEl.textContent = `Find ${info.name} by clicking its actual state outline.`;
+        feedbackEl.textContent = `New round. Can you find ${info.name} on the map?`;
       }
-      hoverStateEl.textContent = "Hover a state to preview its name.";
+      hoverStateEl.textContent = "Tap a state to explore it.";
       setAnswerPanel(game.currentCode, false);
       updateHud();
     }
@@ -917,14 +927,12 @@ Place this code in the empty space below. */
       if (correct) {
         game.score += 1;
         game.streak += 1;
-        feedbackEl.textContent = game.showCapitals
-          ? `${answerInfo.name} is correct. Its capital is ${answerInfo.capital}.`
-          : `${answerInfo.name} is correct. Its capital is ${answerInfo.capital}.`;
+        const praise = yayLines[Math.floor(Math.random() * yayLines.length)];
+        feedbackEl.textContent = `${praise}, Addie. ${answerInfo.name} is right, and its capital is ${answerInfo.capital}.`;
       } else {
         game.streak = 0;
-        feedbackEl.textContent = game.showCapitals
-          ? `Not quite. The correct state was ${answerInfo.name}, and its capital is ${answerInfo.capital}.`
-          : `Not quite. The correct answer was ${answerInfo.name}. Its capital is ${answerInfo.capital}.`;
+        const encourage = tryLines[Math.floor(Math.random() * tryLines.length)];
+        feedbackEl.textContent = `${encourage}, Addie. The correct answer was ${answerInfo.name}, and its capital is ${answerInfo.capital}.`;
       }
       setAnswerPanel(game.currentCode, true);
       updateHud();
@@ -942,9 +950,7 @@ Place this code in the empty space below. */
         currentPath.classList.add("hint");
       }
       const info = stateInfo[game.currentCode];
-      feedbackEl.textContent = game.showCapitals
-        ? `Reveal: ${info.name} is the state with the capital ${info.capital}.`
-        : `Reveal: this state is ${info.name}, and its capital is ${info.capital}.`;
+      feedbackEl.textContent = `Here it is, Addie. ${info.name} is the right state, and its capital is ${info.capital}.`;
       setAnswerPanel(game.currentCode, true);
       updateHud();
     }
@@ -983,4 +989,5 @@ Place this code in the empty space below. */
   </script>
 </body>
 </html>
+
 
