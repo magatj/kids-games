@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Monster Truck Adventure</title>
+  <style>
+    :root {
+      --sky-top: #7dd3fc;
+      --sky-mid: #93c5fd;
+      --sky-low: #fde68a;
+      --panel: rgba(255, 255, 255, 0.9);
+      --ink: #16324f;
+      --soft: #537392;
+      --pink: #ff5f8f;
+      --blue: #2d8cff;
+      --green: #22c55e;
+      --gold: #fbbf24;
+      --orange: #fb923c;
+      --shadow: 0 24px 48px rgba(43, 87, 138, 0.22);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Trebuchet MS", "Arial Rounded MT Bold", sans-serif;
+      background:
+        radial-gradient(circle at top, rgba(255,255,255,0.5), transparent 24%),
+        linear-gradient(180deg, var(--sky-top), var(--sky-mid) 48%, var(--sky-low));
+      color: white;
+    }
+    .shell { width: min(100%, 1180px); margin: 0 auto; padding: 16px; }
+    .topbar { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+    .brand, .card, .panel, .helper { box-shadow: var(--shadow); }
+    .brand {
+      position: relative;
+      padding: 18px 22px 24px;
+      border-radius: 28px;
+      color: var(--ink);
+      background: linear-gradient(160deg, rgba(255,255,255,0.96), rgba(255,244,214,0.92));
+      overflow: hidden;
+    }
+    .brand::after {
+      content: "";
+      position: absolute;
+      left: 14px;
+      right: 14px;
+      bottom: 10px;
+      height: 12px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--pink), var(--gold), var(--green), var(--blue));
+    }
+    .brand h1, .brand p, .panel h2, .panel p { margin: 0; }
+    .brand h1 {
+      font-size: clamp(2rem, 4vw, 3.4rem);
+      line-height: 0.98;
+      color: #0f4f93;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .brand p { margin-top: 8px; color: var(--soft); max-width: 54ch; }
+    .hud { display: flex; gap: 12px; flex-wrap: wrap; justify-content: flex-end; }
+    .card {
+      min-width: 110px;
+      padding: 12px 16px;
+      border-radius: 24px;
+      text-align: center;
+      color: var(--ink);
+      background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(243,251,255,0.9));
+    }
+    .card span { display: block; font-size: 0.82rem; color: var(--soft); text-transform: uppercase; letter-spacing: 0.06em; }
+    .card strong { display: block; margin-top: 4px; font-size: 1.85rem; }
+    .game-wrap { position: relative; width: min(100%, 1040px); margin: 0 auto; }
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      border-radius: 32px;
+      border: 6px solid rgba(255,255,255,0.95);
+      box-shadow: 0 30px 54px rgba(43, 87, 138, 0.28);
+      background: #dbeafe;
+      touch-action: none;
+    }
+    .overlay { position: absolute; inset: 0; display: grid; place-items: center; padding: 20px; }
+    .overlay.hidden { display: none; }
+    .panel {
+      width: min(100%, 460px);
+      padding: 28px 24px;
+      border-radius: 30px;
+      text-align: center;
+      color: var(--ink);
+      background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255,255,255,0.86));
+      border: 4px solid rgba(255,255,255,0.95);
+    }
+    .panel h2 { font-size: 2.1rem; color: #0f4f93; }
+    .panel p { margin-top: 10px; color: var(--soft); line-height: 1.5; }
+    button {
+      border: 0;
+      border-radius: 999px;
+      font: inherit;
+      font-weight: 900;
+      letter-spacing: 0.03em;
+      cursor: pointer;
+      box-shadow: inset 0 -4px 0 rgba(0,0,0,0.16);
+    }
+    .play-btn { margin-top: 18px; padding: 15px 28px; color: white; background: linear-gradient(180deg, var(--pink), #db2777); }
+    .controls {
+      width: min(100%, 1040px);
+      margin: 16px auto 0;
+      display: grid;
+      grid-template-columns: 1.15fr 1.15fr 0.7fr;
+      gap: 12px;
+    }
+    .touch-btn { min-height: 84px; border-radius: 26px; color: white; font-size: 1.05rem; }
+    .jump-btn { background: linear-gradient(180deg, #34d399, #059669); }
+    .boost-btn { background: linear-gradient(180deg, #fb923c, #ea580c); }
+    .pause-btn { background: linear-gradient(180deg, #60a5fa, #2563eb); }
+    .helper {
+      width: min(100%, 1040px);
+      margin: 14px auto 0;
+      padding: 14px 18px;
+      border-radius: 24px;
+      color: var(--ink);
+      background: linear-gradient(180deg, rgba(255,255,255,0.94), rgba(255,255,255,0.82));
+      text-align: center;
+      line-height: 1.45;
+    }
+    @media (max-width: 720px) {
+      .shell { padding: 10px; }
+      .controls { grid-template-columns: 1fr 1fr; }
+      .pause-btn { grid-column: 1 / -1; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <h1>Monster Truck Adventure</h1>
+        <p>Jump hills, grab stars, and smash toy cars in a bright side-scrolling monster truck game made to be easy and exciting.</p>
+      </div>
+      <div class="hud">
+        <div class="card"><span>Stars</span><strong id="scoreEl">0</strong></div>
+        <div class="card"><span>Smashes</span><strong id="smashEl">0</strong></div>
+        <div class="card"><span>Distance</span><strong id="distanceEl">0%</strong></div>
+        <div class="card"><span>Status</span><strong id="statusEl">Go!</strong></div>
+      </div>
+    </header>
+
+    <section class="game-wrap">
+      <canvas id="game" width="960" height="540" aria-label="Monster truck adventure game"></canvas>
+      <div class="overlay" id="startOverlay">
+        <div class="panel">
+          <h2>Big Wheels, Big Fun</h2>
+          <p>The truck drives forward on its own.</p>
+          <p>Tap <strong>Jump</strong> to hop over bumps and tap <strong>Boost Smash</strong> to zoom and crush toy cars.</p>
+          <button class="play-btn" id="playBtn">Play</button>
+        </div>
+      </div>
+      <div class="overlay hidden" id="finishOverlay">
+        <div class="panel">
+          <h2 id="finishTitle">You Did It!</h2>
+          <p id="finishText">The finish line is yours.</p>
+          <button class="play-btn" id="playAgainBtn">Play Again</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="controls">
+      <button class="touch-btn jump-btn" id="jumpBtn">Jump</button>
+      <button class="touch-btn boost-btn" id="boostBtn">Boost Smash</button>
+      <button class="touch-btn pause-btn" id="pauseBtn">Pause</button>
+    </section>
+
+    <div class="helper">
+      Easy controls: the truck always drives forward. Use <strong>Jump</strong> and <strong>Boost Smash</strong>. Keyboard also works with <strong>Space</strong> to jump, <strong>X</strong> to boost, and <strong>P</strong> to pause.
+    </div>
+  </main>
+
+  <script>
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+    const scoreEl = document.getElementById("scoreEl");
+    const smashEl = document.getElementById("smashEl");
+    const distanceEl = document.getElementById("distanceEl");
+    const statusEl = document.getElementById("statusEl");
+    const startOverlay = document.getElementById("startOverlay");
+    const finishOverlay = document.getElementById("finishOverlay");
+    const finishTitle = document.getElementById("finishTitle");
+    const finishText = document.getElementById("finishText");
+    const playBtn = document.getElementById("playBtn");
+    const playAgainBtn = document.getElementById("playAgainBtn");
+    const jumpBtn = document.getElementById("jumpBtn");
+    const boostBtn = document.getElementById("boostBtn");
+    const pauseBtn = document.getElementById("pauseBtn");
+
+    const WIDTH = canvas.width;
+    const HEIGHT = canvas.height;
+    const FINISH_X = 5600;
+
+    let audioContext;
+    let lastTime = 0;
+
+    const input = {
+      boostHeld: false
+    };
+
+    const game = {
+      playing: false,
+      paused: false,
+      finished: false,
+      score: 0,
+      smashes: 0,
+      message: "Go!",
+      messageTimer: 0,
+      cameraX: 0,
+      particles: [],
+      stars: [],
+      obstacles: [],
+      decorations: [],
+      truck: null
+    };
+
+    function unlockAudio() {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioContext.state === "suspended") {
+        audioContext.resume();
+      }
+    }
+
+    function playTone(freq, duration, type, volume, endFreq = freq) {
+      if (!audioContext) return;
+      const now = audioContext.currentTime;
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, now);
+      osc.frequency.exponentialRampToValueAtTime(Math.max(60, endFreq), now + duration);
+      gain.gain.setValueAtTime(volume, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+      osc.start(now);
+      osc.stop(now + duration);
+    }
+
+    function playSound(kind) {
+      if (!audioContext) return;
+      if (kind === "jump") playTone(420, 0.12, "triangle", 0.05, 620);
+      if (kind === "star") {
+        playTone(660, 0.08, "triangle", 0.05, 880);
+        setTimeout(() => playTone(880, 0.1, "triangle", 0.04, 980), 70);
+      }
+      if (kind === "smash") {
+        playTone(180, 0.08, "square", 0.04, 120);
+        setTimeout(() => playTone(240, 0.06, "square", 0.03, 160), 40);
+      }
+      if (kind === "boost") playTone(240, 0.14, "sawtooth", 0.035, 420);
+      if (kind === "finish") {
+        playTone(520, 0.14, "triangle", 0.05, 700);
+        setTimeout(() => playTone(700, 0.14, "triangle", 0.05, 920), 90);
+      }
+      if (kind === "bump") playTone(220, 0.1, "square", 0.035, 150);
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function lerp(a, b, t) {
+      return a + (b - a) * t;
+    }
+
+    function bumpShape(x, center, width, height) {
+      const d = Math.abs(x - center);
+      if (d > width * 0.5) return 0;
+      const t = d / (width * 0.5);
+      return height * (0.5 + Math.cos(Math.PI * t) * 0.5);
+    }
+
+    function terrainHeight(x) {
+      let y = 392;
+      y -= Math.sin(x * 0.006) * 24;
+      y -= Math.sin(x * 0.014) * 12;
+      const hills = [
+        [500, 260, 32], [980, 320, 42], [1450, 280, 64], [1970, 250, 54], [2400, 360, 34],
+        [2920, 260, 74], [3440, 320, 48], [3950, 250, 70], [4520, 360, 36], [5000, 320, 52]
+      ];
+      for (const [center, width, height] of hills) {
+        y -= bumpShape(x, center, width, height);
+      }
+      return y;
+    }
+
+    function setMessage(text, time = 1.4) {
+      game.message = text;
+      game.messageTimer = time;
+      statusEl.textContent = text;
+    }
+
+    function addFloatText(text, x, y, color) {
+      game.particles.push({ kind: "text", text, x, y, vy: -40, life: 1, maxLife: 1, color });
+    }
+
+    function addBurst(x, y, color, count, speedMin, speedMax) {
+      for (let i = 0; i < count; i += 1) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = lerp(speedMin, speedMax, Math.random());
+        game.particles.push({
+          kind: "spark",
+          x, y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - 20,
+          life: 0.7 + Math.random() * 0.5,
+          maxLife: 1.1,
+          color,
+          size: 4 + Math.random() * 5
+        });
+      }
+    }
+
+    function createWorld() {
+      game.stars = [];
+      game.obstacles = [];
+      game.decorations = [];
+
+      for (let x = 280; x < FINISH_X; x += 180) {
+        game.decorations.push({ x, type: x % 540 < 180 ? "tree" : x % 720 < 360 ? "sign" : "balloon" });
+      }
+
+      for (let x = 420; x < FINISH_X - 200; x += 210) {
+        game.stars.push({ x, y: terrainHeight(x) - (60 + Math.random() * 60), collected: false });
+      }
+
+      for (let x = 760; x < FINISH_X - 280; x += 360) {
+        const kindRoll = Math.random();
+        game.obstacles.push({
+          x,
+          y: terrainHeight(x) - 12,
+          width: 70,
+          height: 34,
+          kind: kindRoll < 0.45 ? "car" : kindRoll < 0.8 ? "crate" : "robot",
+          smashed: false,
+          wobble: Math.random() * Math.PI * 2
+        });
+      }
+    }
+
+    function updateHud() {
+      scoreEl.textContent = String(game.score);
+      smashEl.textContent = String(game.smashes);
+      const distance = game.truck ? clamp(Math.round((game.truck.x / FINISH_X) * 100), 0, 100) : 0;
+      distanceEl.textContent = `${distance}%`;
+      statusEl.textContent = game.message;
+    }
+
+    function resetGame() {
+      game.score = 0;
+      game.smashes = 0;
+      game.finished = false;
+      game.paused = false;
+      game.cameraX = 0;
+      game.particles = [];
+      game.truck = { x: 150, y: terrainHeight(150) - 54, vy: 0, angle: 0, onGround: true, speed: 250, boostTimer: 0 };
+      createWorld();
+      updateHud();
+      setMessage("Go!", 1.2);
+      finishOverlay.classList.add("hidden");
+      pauseBtn.textContent = "Pause";
+    }
+
+    function beginPlay() {
+      unlockAudio();
+      startOverlay.classList.add("hidden");
+      resetGame();
+      game.playing = true;
+      lastTime = 0;
+      requestAnimationFrame(loop);
+    }
+
+    function finishRun() {
+      if (game.finished) return;
+      game.finished = true;
+      game.playing = false;
+      playSound("finish");
+      finishTitle.textContent = "You Did It!";
+      finishText.textContent = `Stars: ${game.score}   Smashes: ${game.smashes}   What a big monster truck run!`;
+      finishOverlay.classList.remove("hidden");
+      setMessage("Winner!", 2.5);
+      updateHud();
+    }
+
+    function triggerJump() {
+      if (!game.playing || game.paused || game.finished || !game.truck.onGround) return;
+      unlockAudio();
+      game.truck.onGround = false;
+      game.truck.vy = -355;
+      playSound("jump");
+      setMessage("Jump!", 0.7);
+    }
+
+    function triggerBoost(on) {
+      input.boostHeld = on;
+      if (on && game.playing && !game.paused && !game.finished) {
+        unlockAudio();
+        if (game.truck.boostTimer < 0.18) playSound("boost");
+        game.truck.boostTimer = Math.max(game.truck.boostTimer, 0.35);
+      }
+    }
+
+    function setPause(nextPaused) {
+      if (!game.playing || game.finished) return;
+      game.paused = nextPaused;
+      pauseBtn.textContent = game.paused ? "Resume" : "Pause";
+      setMessage(game.paused ? "Paused" : "Go!", 0.7);
+      updateHud();
+      if (!game.paused) {
+        lastTime = 0;
+        requestAnimationFrame(loop);
+      }
+    }
+
+    function updateTruck(dt) {
+      const truck = game.truck;
+      const baseSpeed = 250;
+      const boostSpeed = 375;
+      const targetSpeed = truck.boostTimer > 0 ? boostSpeed : baseSpeed;
+      truck.speed = lerp(truck.speed, targetSpeed, dt * 5);
+      truck.x += truck.speed * dt;
+
+      if (input.boostHeld) {
+        truck.boostTimer = Math.min(0.8, truck.boostTimer + dt * 1.2);
+      } else {
+        truck.boostTimer = Math.max(0, truck.boostTimer - dt);
+      }
+
+      const frontGround = terrainHeight(truck.x + 40);
+      const rearGround = terrainHeight(truck.x - 40);
+      const groundY = (frontGround + rearGround) * 0.5 - 54;
+      const slopeAngle = Math.atan2(frontGround - rearGround, 80);
+
+      if (!truck.onGround) {
+        truck.vy += 860 * dt;
+        truck.y += truck.vy * dt;
+        truck.angle = lerp(truck.angle, slopeAngle + clamp(truck.vy / 620, -0.5, 0.6), dt * 4);
+        if (truck.y >= groundY) {
+          truck.y = groundY;
+          truck.vy = 0;
+          truck.onGround = true;
+          truck.angle = slopeAngle;
+          addBurst(truck.x, truck.y + 56, "rgba(210,180,120,0.8)", 8, 12, 44);
+        }
+      } else {
+        truck.y = groundY;
+        truck.angle = lerp(truck.angle, slopeAngle, dt * 8);
+        if (Math.abs(frontGround - rearGround) > 50 && truck.speed > 320) {
+          truck.onGround = false;
+          truck.vy = -60;
+        }
+      }
+
+      game.cameraX = Math.max(0, truck.x - 220);
+      if (truck.x >= FINISH_X) finishRun();
+    }
+
+    function updateStars() {
+      const truck = game.truck;
+      for (const star of game.stars) {
+        if (star.collected) continue;
+        const dx = star.x - truck.x;
+        const dy = star.y - (truck.y - 10);
+        if (Math.abs(dx) < 46 && Math.abs(dy) < 50) {
+          star.collected = true;
+          game.score += 1;
+          addBurst(star.x, star.y, "#fde047", 10, 18, 70);
+          addFloatText("+1 STAR", star.x, star.y - 12, "#f59e0b");
+          setMessage("Star!", 0.8);
+          playSound("star");
+          updateHud();
+        }
+      }
+    }
+
+    function updateObstacles(dt) {
+      const truck = game.truck;
+      for (const obstacle of game.obstacles) {
+        if (obstacle.smashed) continue;
+        obstacle.y = terrainHeight(obstacle.x) - 12;
+        obstacle.wobble += dt * 3.2;
+        const dx = obstacle.x - truck.x;
+        const dy = obstacle.y - truck.y;
+        if (Math.abs(dx) < 72 && Math.abs(dy) < 65) {
+          const strongHit = truck.boostTimer > 0.08 || truck.speed > 315 || (!truck.onGround && truck.vy > 60);
+          if (strongHit) {
+            obstacle.smashed = true;
+            game.smashes += 1;
+            addBurst(obstacle.x, obstacle.y - 20, "#f97316", 14, 24, 82);
+            addFloatText("SMASH!", obstacle.x, obstacle.y - 48, "#ef4444");
+            setMessage("Smash!", 0.85);
+            playSound("smash");
+          } else {
+            obstacle.smashed = true;
+            truck.speed = Math.max(180, truck.speed - 55);
+            truck.vy = -110;
+            truck.onGround = false;
+            addFloatText("BOUNCE!", obstacle.x, obstacle.y - 44, "#2563eb");
+            setMessage("Bounce!", 0.75);
+            playSound("bump");
+          }
+          updateHud();
+        }
+      }
+    }
+
+    function updateParticles(dt) {
+      for (let i = game.particles.length - 1; i >= 0; i -= 1) {
+        const p = game.particles[i];
+        p.life -= dt;
+        if (p.kind === "spark") {
+          p.x += p.vx * dt;
+          p.y += p.vy * dt;
+          p.vy += 140 * dt;
+        } else {
+          p.y += p.vy * dt;
+        }
+        if (p.life <= 0) game.particles.splice(i, 1);
+      }
+    }
+
+    function update(dt) {
+      if (game.messageTimer > 0) {
+        game.messageTimer -= dt;
+        if (game.messageTimer <= 0) {
+          game.message = input.boostHeld ? "Boost!" : "Go!";
+          updateHud();
+        }
+      }
+      updateTruck(dt);
+      updateStars();
+      updateObstacles(dt);
+      updateParticles(dt);
+    }
+
+    function drawCloud(x, y, scale) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.scale(scale, scale);
+      ctx.fillStyle = "rgba(255,255,255,0.92)";
+      ctx.beginPath();
+      ctx.arc(0, 0, 20, 0, Math.PI * 2);
+      ctx.arc(22, -10, 24, 0, Math.PI * 2);
+      ctx.arc(50, 0, 20, 0, Math.PI * 2);
+      ctx.arc(22, 8, 26, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawMountains(color, parallax, baseY, height) {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(0, HEIGHT);
+      for (let x = 0; x <= WIDTH + 60; x += 60) {
+        const worldX = x + game.cameraX * parallax;
+        const y = baseY + Math.sin(worldX * 0.006) * height + Math.cos(worldX * 0.012) * height * 0.3;
+        ctx.lineTo(x, y);
+      }
+      ctx.lineTo(WIDTH, HEIGHT);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function drawBackground() {
+      const sky = ctx.createLinearGradient(0, 0, 0, HEIGHT);
+      sky.addColorStop(0, "#87d9ff");
+      sky.addColorStop(0.55, "#a7d9ff");
+      sky.addColorStop(1, "#fff2b4");
+      ctx.fillStyle = sky;
+      ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+      ctx.fillStyle = "rgba(255,255,255,0.75)";
+      for (let i = 0; i < 6; i += 1) {
+        const x = ((i * 190) - game.cameraX * 0.18) % (WIDTH + 180) - 80;
+        const y = 70 + (i % 3) * 34;
+        drawCloud(x, y, 1 + (i % 2) * 0.18);
+      }
+
+      drawMountains("#a7b5ff", 0.18, 295, 78);
+      drawMountains("#86a5f4", 0.28, 320, 106);
+      drawMountains("#6d8de5", 0.4, 350, 120);
+
+      ctx.fillStyle = "#ffd54a";
+      ctx.beginPath();
+      ctx.arc(820, 86, 42, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function drawGround() {
+      ctx.beginPath();
+      ctx.moveTo(0, HEIGHT);
+      for (let sx = 0; sx <= WIDTH + 10; sx += 8) {
+        const worldX = sx + game.cameraX;
+        ctx.lineTo(sx, terrainHeight(worldX));
+      }
+      ctx.lineTo(WIDTH, HEIGHT);
+      ctx.closePath();
+      const dirt = ctx.createLinearGradient(0, 300, 0, HEIGHT);
+      dirt.addColorStop(0, "#7c4a23");
+      dirt.addColorStop(1, "#553013");
+      ctx.fillStyle = dirt;
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.moveTo(0, HEIGHT);
+      for (let sx = 0; sx <= WIDTH + 10; sx += 8) {
+        const worldX = sx + game.cameraX;
+        ctx.lineTo(sx, terrainHeight(worldX));
+      }
+      ctx.lineTo(WIDTH, HEIGHT);
+      ctx.closePath();
+      ctx.strokeStyle = "#5dd35c";
+      ctx.lineWidth = 14;
+      ctx.stroke();
+    }
+
+    function drawDecorations() {
+      for (const decor of game.decorations) {
+        const sx = decor.x - game.cameraX;
+        if (sx < -100 || sx > WIDTH + 100) continue;
+        const gy = terrainHeight(decor.x);
+        if (decor.type === "tree") {
+          ctx.fillStyle = "#8b5a2b";
+          ctx.fillRect(sx - 6, gy - 48, 12, 48);
+          ctx.fillStyle = "#22c55e";
+          ctx.beginPath();
+          ctx.arc(sx, gy - 62, 24, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(sx - 16, gy - 48, 18, 0, Math.PI * 2);
+          ctx.arc(sx + 16, gy - 48, 18, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (decor.type === "sign") {
+          ctx.fillStyle = "#8b5a2b";
+          ctx.fillRect(sx - 5, gy - 56, 10, 56);
+          ctx.fillStyle = "#fef08a";
+          ctx.fillRect(sx - 28, gy - 84, 56, 30);
+          ctx.fillStyle = "#92400e";
+          ctx.font = "900 12px Trebuchet MS";
+          ctx.textAlign = "center";
+          ctx.fillText("JUMP!", sx, gy - 64);
+        } else {
+          const bob = Math.sin(decor.x * 0.03) * 3;
+          ctx.fillStyle = "#ef4444";
+          ctx.beginPath();
+          ctx.arc(sx, gy - 88 + bob, 12, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = "#3b82f6";
+          ctx.beginPath();
+          ctx.arc(sx - 16, gy - 78 + bob, 11, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = "#f59e0b";
+          ctx.beginPath();
+          ctx.arc(sx + 16, gy - 76 + bob, 11, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = "rgba(255,255,255,0.6)";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(sx, gy - 76 + bob);
+          ctx.lineTo(sx, gy - 20);
+          ctx.stroke();
+        }
+      }
+    }
+
+    function drawStar(x, y, r, fill, stroke) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.beginPath();
+      for (let i = 0; i < 10; i += 1) {
+        const angle = -Math.PI / 2 + i * Math.PI / 5;
+        const radius = i % 2 === 0 ? r : r * 0.48;
+        const px = Math.cos(angle) * radius;
+        const py = Math.sin(angle) * radius;
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.fillStyle = fill;
+      ctx.fill();
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawStars() {
+      for (const star of game.stars) {
+        if (star.collected) continue;
+        const sx = star.x - game.cameraX;
+        if (sx < -30 || sx > WIDTH + 30) continue;
+        drawStar(sx, star.y, 14, "#fde047", "#f59e0b");
+      }
+    }
+
+    function roundRect(x, y, w, h, r, fill) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+      if (fill) ctx.fill();
+      else ctx.stroke();
+    }
+
+    function drawObstacle(obstacle) {
+      if (obstacle.smashed) return;
+      const sx = obstacle.x - game.cameraX;
+      if (sx < -120 || sx > WIDTH + 120) return;
+      const y = obstacle.y;
+      ctx.save();
+      ctx.translate(sx, y + Math.sin(obstacle.wobble) * 2);
+      if (obstacle.kind === "car") {
+        ctx.fillStyle = "#ef4444";
+        roundRect(-34, -24, 68, 24, 10, true);
+        ctx.fillStyle = "#60a5fa";
+        roundRect(-16, -38, 32, 18, 8, true);
+        ctx.fillStyle = "#0f172a";
+        ctx.beginPath();
+        ctx.arc(-20, 0, 10, 0, Math.PI * 2);
+        ctx.arc(20, 0, 10, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (obstacle.kind === "crate") {
+        ctx.fillStyle = "#d97706";
+        roundRect(-28, -34, 56, 34, 6, true);
+        ctx.strokeStyle = "#92400e";
+        ctx.lineWidth = 4;
+        ctx.strokeRect(-26, -32, 52, 30);
+        ctx.beginPath();
+        ctx.moveTo(-24, -30);
+        ctx.lineTo(24, -4);
+        ctx.moveTo(24, -30);
+        ctx.lineTo(-24, -4);
+        ctx.stroke();
+      } else {
+        ctx.fillStyle = "#8b5cf6";
+        roundRect(-24, -40, 48, 38, 12, true);
+        ctx.fillStyle = "#111827";
+        ctx.fillRect(-12, -56, 24, 16);
+        ctx.fillStyle = "#fef08a";
+        ctx.beginPath();
+        ctx.arc(-8, -20, 4, 0, Math.PI * 2);
+        ctx.arc(8, -20, 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#111827";
+        ctx.fillRect(-24, -2, 48, 10);
+      }
+      ctx.restore();
+    }
+
+    function drawWheel(x, y, r) {
+      ctx.fillStyle = "#111827";
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#4b5563";
+      ctx.beginPath();
+      ctx.arc(x, y, r * 0.56, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = "#d1d5db";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      for (let i = 0; i < 6; i += 1) {
+        const angle = i * Math.PI / 3;
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + Math.cos(angle) * r * 0.48, y + Math.sin(angle) * r * 0.48);
+      }
+      ctx.stroke();
+    }
+
+    function drawTruck() {
+      const truck = game.truck;
+      const sx = truck.x - game.cameraX;
+      ctx.save();
+      ctx.translate(sx, truck.y);
+      ctx.rotate(truck.angle);
+
+      if (truck.boostTimer > 0.04) {
+        ctx.fillStyle = "rgba(255, 173, 51, 0.7)";
+        ctx.beginPath();
+        ctx.moveTo(-62, -2);
+        ctx.lineTo(-98 - Math.random() * 16, -18);
+        ctx.lineTo(-98 - Math.random() * 16, 12);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      ctx.fillStyle = "#ef4444";
+      roundRect(-54, -42, 104, 36, 14, true);
+      ctx.fillStyle = "#2563eb";
+      roundRect(-14, -72, 56, 34, 14, true);
+      ctx.fillStyle = "#60a5fa";
+      roundRect(-2, -66, 22, 16, 6, true);
+      ctx.fillStyle = "#fde047";
+      ctx.fillRect(34, -34, 12, 8);
+      ctx.fillStyle = "#111827";
+      ctx.fillRect(-64, -8, 130, 14);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(-36, -26, 20, 8);
+      ctx.fillStyle = "#22c55e";
+      roundRect(-34, -20, 20, 10, 5, true);
+      ctx.fillStyle = "#111827";
+      roundRect(-22, -22, 8, 6, 3, true);
+      drawWheel(-34, 12, 26);
+      drawWheel(42, 12, 26);
+      ctx.restore();
+    }
+
+    function drawFinishLine() {
+      const sx = FINISH_X - game.cameraX;
+      if (sx < -80 || sx > WIDTH + 80) return;
+      const ground = terrainHeight(FINISH_X);
+      ctx.fillStyle = "#8b5a2b";
+      ctx.fillRect(sx - 8, ground - 150, 16, 150);
+      for (let i = 0; i < 8; i += 1) {
+        ctx.fillStyle = i % 2 === 0 ? "#111827" : "#ffffff";
+        ctx.fillRect(sx + 8, ground - 148 + i * 18, 52, 18);
+      }
+    }
+
+    function drawParticles() {
+      ctx.textAlign = "center";
+      ctx.font = "900 22px Trebuchet MS";
+      for (const p of game.particles) {
+        const sx = p.x - game.cameraX;
+        if (p.kind === "spark") {
+          ctx.globalAlpha = clamp(p.life / p.maxLife, 0, 1);
+          ctx.fillStyle = p.color;
+          ctx.beginPath();
+          ctx.arc(sx, p.y, p.size * clamp(p.life, 0, 1), 0, Math.PI * 2);
+          ctx.fill();
+          ctx.globalAlpha = 1;
+        } else {
+          ctx.globalAlpha = clamp(p.life / p.maxLife, 0, 1);
+          ctx.fillStyle = p.color;
+          ctx.fillText(p.text, sx, p.y);
+          ctx.globalAlpha = 1;
+        }
+      }
+    }
+
+    function drawMessage() {
+      ctx.save();
+      ctx.textAlign = "center";
+      ctx.font = "900 34px Trebuchet MS";
+      ctx.fillStyle = "rgba(255,255,255,0.96)";
+      ctx.strokeStyle = "rgba(22, 50, 79, 0.45)";
+      ctx.lineWidth = 8;
+      ctx.strokeText(game.message, WIDTH * 0.5, 72);
+      ctx.fillText(game.message, WIDTH * 0.5, 72);
+      ctx.restore();
+    }
+
+    function render() {
+      drawBackground();
+      drawGround();
+      drawDecorations();
+      drawFinishLine();
+      for (const obstacle of game.obstacles) drawObstacle(obstacle);
+      drawStars();
+      drawTruck();
+      drawParticles();
+      drawMessage();
+    }
+
+    function loop(timestamp) {
+      if (!game.playing || game.paused) return;
+      if (!lastTime) lastTime = timestamp;
+      const dt = Math.min(0.033, (timestamp - lastTime) / 1000);
+      lastTime = timestamp;
+      update(dt);
+      render();
+      if (game.playing && !game.paused) requestAnimationFrame(loop);
+    }
+
+    function bindPress(button, onPress, onRelease) {
+      const start = (event) => { event.preventDefault(); unlockAudio(); onPress(); };
+      const end = (event) => { event.preventDefault(); if (onRelease) onRelease(); };
+      button.addEventListener("pointerdown", start);
+      button.addEventListener("pointerup", end);
+      button.addEventListener("pointerleave", end);
+      button.addEventListener("pointercancel", end);
+    }
+
+    bindPress(jumpBtn, triggerJump, null);
+    bindPress(boostBtn, () => triggerBoost(true), () => triggerBoost(false));
+
+    pauseBtn.addEventListener("click", () => { unlockAudio(); setPause(!game.paused); });
+    playBtn.addEventListener("click", beginPlay);
+    playAgainBtn.addEventListener("click", beginPlay);
+
+    window.addEventListener("keydown", (event) => {
+      if (event.repeat) return;
+      if (event.code === "Space" || event.key.toLowerCase() === "z") {
+        event.preventDefault();
+        triggerJump();
+      }
+      if (event.key.toLowerCase() === "x") {
+        event.preventDefault();
+        triggerBoost(true);
+      }
+      if (event.key.toLowerCase() === "p") {
+        event.preventDefault();
+        setPause(!game.paused);
+      }
+    });
+
+    window.addEventListener("keyup", (event) => {
+      if (event.key.toLowerCase() === "x") triggerBoost(false);
+    });
+
+    resetGame();
+    render();
+  </script>
+</body>
+</html>
