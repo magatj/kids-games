@@ -321,6 +321,28 @@
       transform: translateY(1px);
     }
 
+    #showAnswerBtn {
+      grid-column: 1 / -1;
+      font-size: 1.3rem;
+      padding: 18px 24px;
+      border-radius: 22px;
+      background: linear-gradient(180deg, #ffe066, #f5bc1a);
+      color: #533000;
+      box-shadow: inset 0 -5px 0 rgba(0,0,0,0.18), 0 6px 20px rgba(245,188,26,0.45);
+      animation: showme-pulse 1.8s ease-in-out infinite;
+      letter-spacing: 0.04em;
+    }
+
+    #showAnswerBtn:hover {
+      animation: none;
+      filter: brightness(1.08);
+    }
+
+    @keyframes showme-pulse {
+      0%, 100% { transform: scale(1); box-shadow: inset 0 -5px 0 rgba(0,0,0,0.18), 0 6px 20px rgba(245,188,26,0.45); }
+      50% { transform: scale(1.04); box-shadow: inset 0 -5px 0 rgba(0,0,0,0.18), 0 10px 32px rgba(245,188,26,0.7); }
+    }
+
     .status-line {
       display: grid;
       gap: 6px;
@@ -703,7 +725,7 @@ Place this code in the empty space below. */
         </section>
 
         <div class="button-grid">
-          <button id="showAnswerBtn">Show Me</button>
+          <button id="showAnswerBtn">👆 Show Me!</button>
           <button class="secondary" id="nextBtn">Next Round</button>
           <button class="secondary" id="restartBtn">Restart</button>
           <button class="secondary" id="shuffleBtn">Fresh Start</button>
@@ -782,6 +804,15 @@ Place this code in the empty space below. */
       wi: { name: "Wisconsin", capital: "Madison" },
       wy: { name: "Wyoming", capital: "Cheyenne" }
     };
+
+    function speak(text) {
+      if (!window.speechSynthesis) return;
+      window.speechSynthesis.cancel();
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.rate = 0.92;
+      utter.pitch = 1.1;
+      window.speechSynthesis.speak(utter);
+    }
 
     const palette = ["#58b7c7", "#f28d68", "#8ccf5d", "#a97be8", "#5ca5f4", "#f3cf55", "#5fd2a7", "#ff7fac"];
     const yayLines = ["Awesome job", "Great work", "Nice one", "You got it", "Super map skills"];
@@ -898,10 +929,12 @@ Place this code in the empty space below. */
         promptTitle.textContent = "Match the capital";
         promptText.textContent = `Which state has the capital city ${info.capital}?`;
         feedbackEl.textContent = `New round. Find the state whose capital is ${info.capital}.`;
+        speak(`Which state has the capital city ${info.capital}?`);
       } else {
         promptTitle.textContent = "Find the state";
         promptText.textContent = `Find ${info.name} on the map.`;
         feedbackEl.textContent = `New round. Can you find ${info.name} on the map?`;
+        speak(`Find ${info.name} on the map.`);
       }
       hoverStateEl.textContent = "Tap a state to explore it.";
       setAnswerPanel(game.currentCode, false);
@@ -924,15 +957,18 @@ Place this code in the empty space below. */
       }
 
       const answerInfo = stateInfo[game.currentCode];
+      const wrongInfo = stateInfo[code];
       if (correct) {
         game.score += 1;
         game.streak += 1;
         const praise = yayLines[Math.floor(Math.random() * yayLines.length)];
         feedbackEl.textContent = `${praise}, Addie. ${answerInfo.name} is right, and its capital is ${answerInfo.capital}.`;
+        speak(`Yes! That's ${answerInfo.name}! Good job!`);
       } else {
         game.streak = 0;
         const encourage = tryLines[Math.floor(Math.random() * tryLines.length)];
         feedbackEl.textContent = `${encourage}, Addie. The correct answer was ${answerInfo.name}, and its capital is ${answerInfo.capital}.`;
+        speak(`That's ${wrongInfo ? wrongInfo.name : "not it"}. ${encourage}. The answer was ${answerInfo.name}.`);
       }
       setAnswerPanel(game.currentCode, true);
       updateHud();
@@ -951,6 +987,7 @@ Place this code in the empty space below. */
       }
       const info = stateInfo[game.currentCode];
       feedbackEl.textContent = `Here it is, Addie. ${info.name} is the right state, and its capital is ${info.capital}.`;
+      speak(`Here it is! ${info.name}!`);
       setAnswerPanel(game.currentCode, true);
       updateHud();
     }
