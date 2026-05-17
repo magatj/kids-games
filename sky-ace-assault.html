@@ -722,6 +722,11 @@
       pickups: [],
       hazards: [],
       boss: null,
+      scorePopups: [],
+      shockwaves: [],
+      combo: 0,
+      comboTimer: 0,
+      bossWarning: 0,
       soundEnabled: localStorage.getItem(SOUND_KEY) !== "off",
       pilot: localStorage.getItem(PILOT_KEY) === "SKY" ? "SKY" : "ADDIE",
       player: {
@@ -1024,6 +1029,11 @@
       state.pickups = [];
       state.hazards = [];
       state.boss = null;
+      state.scorePopups = [];
+      state.shockwaves = [];
+      state.combo = 0;
+      state.comboTimer = 0;
+      state.bossWarning = 0;
       state.player.x = WIDTH / 2;
       state.player.y = HEIGHT - 120;
       state.player.fireCooldown = 0;
@@ -1115,6 +1125,149 @@
       updateHud();
     }
 
+    function getComboMultiplier() {
+      if (state.combo < 3) return 1;
+      if (state.combo < 7) return 2;
+      if (state.combo < 12) return 3;
+      if (state.combo < 18) return 4;
+      return 5;
+    }
+
+    function updateCombo() {
+      if (state.comboTimer > 0) {
+        state.comboTimer -= 1;
+        if (state.comboTimer === 0) {
+          state.combo = 0;
+        }
+      }
+    }
+
+    function addShockwave(x, y, maxR = 60) {
+      state.shockwaves.push({ x, y, r: 4, maxR, life: 20, maxLife: 20 });
+    }
+
+    function killEnemy(enemy, ox, oy) {
+      state.combo += 1;
+      state.comboTimer = 90;
+      const mult = getComboMultiplier();
+      const earned = enemy.score * mult;
+      addScore(earned);
+      addParticles(enemy.x, enemy.y, enemy.color, 18, 5);
+      addShockwave(enemy.x, enemy.y, enemy.w * 1.4);
+      state.scorePopups.push({
+        x: ox,
+        y: oy,
+        text: mult > 1 ? `+${earned}  ×${mult}` : `+${earned}`,
+        life: 55,
+        maxLife: 55
+      });
+      state.shake = Math.max(state.shake, 7);
+      playSound("enemyDown");
+    }
+
+    function updateScorePopups() {
+      for (const p of state.scorePopups) {
+        p.y -= 1.2;
+        p.life -= 1;
+      }
+      state.scorePopups = state.scorePopups.filter((p) => p.life > 0);
+    }
+
+    function updateShockwaves() {
+      for (const s of state.shockwaves) {
+        s.r += (s.maxR - s.r) * 0.22;
+        s.life -= 1;
+      }
+      state.shockwaves = state.shockwaves.filter((s) => s.life > 0);
+    }
+
+    function drawScorePopups() {
+      ctx.textAlign = "center";
+      for (const p of state.scorePopups) {
+        const alpha = p.life / p.maxLife;
+        ctx.globalAlpha = Math.min(1, alpha * 2.2);
+        ctx.font = `900 ${Math.round(13 + (1 - alpha) * 5)}px Trebuchet MS`;
+        ctx.fillStyle = "#ffffff";
+        ctx.fillText(p.text, p.x, p.y);
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    function drawShockwaves() {
+      for (const s of state.shockwaves) {
+        const alpha = (s.life / s.maxLife) * 0.55;
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.strokeStyle = "#7fe7ff";
+        ctx.lineWidth = 2.5;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = "#7fe7ff";
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    function drawComboIndicator() {
+      if (state.combo < 2 || !state.running || state.paused) return;
+      const mult = getComboMultiplier();
+      const fadeAlpha = Math.min(1, state.comboTimer / 18);
+      const x = 14;
+      const y = 14;
+      const w = 120;
+      const h = 44;
+      ctx.save();
+      ctx.globalAlpha = fadeAlpha;
+      ctx.fillStyle = "rgba(6, 16, 32, 0.82)";
+      ctx.beginPath();
+      ctx.roundRect(x, y, w, h, 22);
+      ctx.fill();
+      const labelColor = mult >= 4 ? "#ffab4a" : mult >= 3 ? "#e87fff" : mult >= 2 ? "#7fe7ff" : "#ffffff";
+      ctx.fillStyle = labelColor;
+      ctx.font = "900 14px Trebuchet MS";
+      ctx.textAlign = "left";
+      ctx.shadowBlur = 8;
+      ctx.shadowColor = labelColor;
+      ctx.fillText(`COMBO  ×${mult}`, x + 14, y + 17);
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = "#a0c8f0";
+      ctx.font = "600 11px Trebuchet MS";
+      ctx.fillText(`${state.combo} kills`, x + 14, y + 31);
+      const barMaxW = w - 28;
+      const barW = barMaxW * (state.comboTimer / 90);
+      ctx.fillStyle = "rgba(255,255,255,0.12)";
+      ctx.beginPath();
+      ctx.roundRect(x + 14, y + 36, barMaxW, 3, 2);
+      ctx.fill();
+      ctx.fillStyle = labelColor;
+      ctx.beginPath();
+      ctx.roundRect(x + 14, y + 36, Math.max(0, barW), 3, 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawBossWarning() {
+      if (state.bossWarning <= 0) return;
+      const t = state.bossWarning / 150;
+      const pulse = Math.sin(state.frame * 0.28) * 0.5 + 0.5;
+      ctx.save();
+      ctx.fillStyle = `rgba(140, 8, 8, ${t * (0.18 + pulse * 0.1)})`;
+      ctx.fillRect(0, 0, WIDTH, HEIGHT);
+      ctx.globalAlpha = t * (0.78 + pulse * 0.22);
+      ctx.fillStyle = "#ff3a3a";
+      ctx.font = "900 30px Trebuchet MS";
+      ctx.textAlign = "center";
+      ctx.shadowBlur = 28;
+      ctx.shadowColor = "#ff2020";
+      ctx.fillText("⚠  CARRIER INCOMING", WIDTH / 2, HEIGHT / 2 - 20);
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = `rgba(255, 170, 170, ${0.55 + pulse * 0.35})`;
+      ctx.font = "600 15px Trebuchet MS";
+      ctx.fillText("PREPARE FOR BOSS ENCOUNTER", WIDTH / 2, HEIGHT / 2 + 16);
+      ctx.restore();
+    }
+
     function firePlayerBullets() {
       const player = state.player;
       if (player.fireCooldown > 0) {
@@ -1139,7 +1292,8 @@
           h: 18,
           vx: offset * 0.018,
           vy: -10.6,
-          damage: 1
+          damage: 1,
+          trail: []
         });
       }
 
@@ -1261,7 +1415,8 @@
         speed: blueprint.speed + (state.stage - 1) * 0.14,
         fireCooldown: 45 + Math.floor(Math.random() * 40),
         angle: Math.random() * Math.PI * 2,
-        seed: Math.random() * Math.PI * 2
+        seed: Math.random() * Math.PI * 2,
+        hitFlash: 0
       });
     }
 
@@ -1284,7 +1439,8 @@
             speed: 2.5 + state.stage * 0.12,
             fireCooldown: 70 + i * 8,
             angle: 0,
-            seed: i * 0.9
+            seed: i * 0.9,
+            hitFlash: 0
           });
         }
       } else if (mod === 2) {
@@ -1302,7 +1458,8 @@
             speed: 2.05 + state.stage * 0.12,
             fireCooldown: 48 + i * 15,
             angle: i % 2 === 0 ? 0 : Math.PI,
-            seed: i * 1.2
+            seed: i * 1.2,
+            hitFlash: 0
           });
         }
       } else if (mod === 3) {
@@ -1347,7 +1504,8 @@
         phase: 1,
         fireCooldown: 30,
         sweep: 0,
-        score: 6000
+        score: 6000,
+        hitFlash: 0
       };
       updateHud();
     }
@@ -1390,6 +1548,10 @@
 
     function updateBullets() {
       for (const bullet of state.bullets) {
+        if (bullet.trail) {
+          bullet.trail.push({ x: bullet.x, y: bullet.y });
+          if (bullet.trail.length > 6) bullet.trail.shift();
+        }
         bullet.x += bullet.vx;
         bullet.y += bullet.vy;
       }
@@ -1432,6 +1594,7 @@
     function updateEnemies() {
       for (const enemy of state.enemies) {
         enemy.angle += 0.03;
+        if (enemy.hitFlash > 0) enemy.hitFlash -= 1;
 
         if (enemy.type === "scout") {
           enemy.y += enemy.speed;
@@ -1471,6 +1634,7 @@
       }
 
       const boss = state.boss;
+      if (boss.hitFlash > 0) boss.hitFlash -= 1;
 
       if (boss.y < boss.targetY) {
         boss.y += 1.8;
@@ -1576,13 +1740,11 @@
           if (!enemy.dead && !bullet.hit && rectsOverlap(bullet, enemy)) {
             bullet.hit = true;
             enemy.hp -= bullet.damage;
+            enemy.hitFlash = 8;
             addParticles(bullet.x, bullet.y, "#ffde87", 6, 3);
             if (enemy.hp <= 0) {
               enemy.dead = true;
-              addScore(enemy.score);
-              addParticles(enemy.x, enemy.y, enemy.color, 18, 5);
-              state.shake = Math.max(state.shake, 7);
-              playSound("enemyDown");
+              killEnemy(enemy, bullet.x, bullet.y);
             }
           }
         }
@@ -1590,6 +1752,7 @@
         if (state.boss && !bullet.hit && rectsOverlap(bullet, state.boss)) {
           bullet.hit = true;
           state.boss.hp -= bullet.damage;
+          state.boss.hitFlash = 6;
           addParticles(bullet.x, bullet.y, "#ffe27a", 5, 2.5);
         }
       }
@@ -1599,12 +1762,11 @@
           if (!enemy.dead && !missile.hit && rectsOverlap({ x: missile.x, y: missile.y, w: 16, h: 16 }, enemy)) {
             missile.hit = true;
             enemy.hp -= 4;
+            enemy.hitFlash = 8;
             addParticles(missile.x, missile.y, "#7fe7ff", 16, 5);
             if (enemy.hp <= 0) {
               enemy.dead = true;
-              addScore(enemy.score);
-              addParticles(enemy.x, enemy.y, enemy.color, 18, 5);
-              playSound("enemyDown");
+              killEnemy(enemy, missile.x, missile.y);
             }
           }
         }
@@ -1612,6 +1774,7 @@
         if (state.boss && !missile.hit && rectsOverlap({ x: missile.x, y: missile.y, w: 16, h: 16 }, state.boss)) {
           missile.hit = true;
           state.boss.hp -= 4;
+          state.boss.hitFlash = 6;
           addParticles(missile.x, missile.y, "#7fe7ff", 16, 5);
         }
       }
@@ -1623,7 +1786,7 @@
         if (!enemy.dead && rectsOverlap(enemy, state.player)) {
           enemy.hp = 0;
           enemy.dead = true;
-          addParticles(enemy.x, enemy.y, enemy.color, 18, 6);
+          killEnemy(enemy, enemy.x, enemy.y);
           damagePlayer();
         }
       }
@@ -1683,7 +1846,17 @@
       }
 
       if (state.stageClock >= 1750) {
-        startBoss();
+        if (!state.bossActive && !state.boss && state.bossWarning === 0) {
+          state.bossWarning = 150;
+          state.enemies = [];
+          state.enemyBullets = [];
+        }
+        if (state.bossWarning > 0) {
+          state.bossWarning -= 1;
+          if (state.bossWarning === 0) {
+            startBoss();
+          }
+        }
         return;
       }
 
@@ -1733,7 +1906,10 @@
       updateEnemyBullets();
       updatePickups();
       updateParticles();
+      updateScorePopups();
+      updateShockwaves();
       handleCollisions();
+      updateCombo();
       updateHud();
     }
 
@@ -1881,6 +2057,8 @@
       ctx.closePath();
       ctx.fill();
 
+      ctx.shadowBlur = 22;
+      ctx.shadowColor = "#ff8828";
       ctx.fillStyle = "#ffb25e";
       ctx.beginPath();
       ctx.moveTo(-8, 24);
@@ -1894,6 +2072,7 @@
       ctx.lineTo(-1, 24);
       ctx.closePath();
       ctx.fill();
+      ctx.shadowBlur = 0;
 
       ctx.fillStyle = "rgba(127, 231, 255, 0.28)";
       ctx.fillRect(-3, -28, 6, 52);
@@ -2060,6 +2239,13 @@
         ctx.fillRect(9, 24, 7, 10);
       }
 
+      if (enemy.hitFlash > 0) {
+        ctx.globalAlpha = (enemy.hitFlash / 8) * 0.65;
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(-enemy.w / 2, -enemy.h / 2, enemy.w, enemy.h);
+        ctx.globalAlpha = 1;
+      }
+
       ctx.restore();
     }
 
@@ -2140,20 +2326,45 @@
         ctx.stroke();
       }
 
+      if (boss.hitFlash > 0) {
+        ctx.globalAlpha = (boss.hitFlash / 6) * 0.45;
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(-boss.w / 2, -boss.h / 2, boss.w, boss.h);
+        ctx.globalAlpha = 1;
+      }
+
       ctx.restore();
     }
 
     function drawBullets() {
-      ctx.fillStyle = "#9df0ff";
+      for (const bullet of state.bullets) {
+        if (bullet.trail) {
+          for (let i = 0; i < bullet.trail.length; i++) {
+            const t = bullet.trail[i];
+            ctx.globalAlpha = (i / bullet.trail.length) * 0.32;
+            ctx.fillStyle = "#7fe7ff";
+            ctx.fillRect(t.x - bullet.w / 2, t.y - bullet.h / 2, bullet.w * 0.65, bullet.h);
+          }
+        }
+      }
+      ctx.globalAlpha = 1;
+
+      ctx.save();
+      ctx.shadowBlur = 14;
+      ctx.shadowColor = "#7fe7ff";
+      ctx.fillStyle = "#c8f8ff";
       for (const bullet of state.bullets) {
         ctx.fillRect(bullet.x - bullet.w / 2, bullet.y - bullet.h / 2, bullet.w, bullet.h);
       }
+      ctx.restore();
 
       for (const missile of state.missiles) {
         ctx.save();
         ctx.translate(missile.x, missile.y);
         ctx.rotate(Math.atan2(missile.vy, missile.vx) + Math.PI / 2);
-        ctx.fillStyle = "#7fe7ff";
+        ctx.shadowBlur = 12;
+        ctx.shadowColor = "#7fe7ff";
+        ctx.fillStyle = "#c8f8ff";
         ctx.beginPath();
         ctx.moveTo(0, -10);
         ctx.lineTo(5, 8);
@@ -2229,6 +2440,7 @@
       ctx.translate(shakeX, shakeY);
 
       drawBackground();
+      drawShockwaves();
       drawPickups();
       drawBullets();
       for (const enemy of state.enemies) {
@@ -2237,8 +2449,12 @@
       drawBoss();
       drawPlayer();
       drawParticles();
+      drawScorePopups();
       drawStageBanner();
       ctx.restore();
+
+      drawComboIndicator();
+      drawBossWarning();
 
       if (state.flash > 0) {
         ctx.fillStyle = `rgba(255, 255, 255, ${state.flash / 28})`;
