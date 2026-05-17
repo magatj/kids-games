@@ -186,6 +186,65 @@
       font-size: 0.96rem;
     }
 
+    .pilot-card {
+      margin: 18px 0 2px;
+      padding: 16px;
+      border-radius: 22px;
+      background: rgba(11, 23, 40, 0.78);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      display: grid;
+      grid-template-columns: 128px 1fr;
+      gap: 14px;
+      align-items: center;
+    }
+
+    .pilot-portrait {
+      width: 128px;
+      height: 128px;
+      border-radius: 20px;
+      object-fit: cover;
+      object-position: center top;
+      background: linear-gradient(180deg, #17365f, #0b1421);
+      border: 1px solid rgba(173, 224, 255, 0.3);
+      box-shadow:
+        0 14px 28px rgba(0, 0, 0, 0.22),
+        0 0 0 1px rgba(255, 255, 255, 0.06) inset;
+    }
+
+    .pilot-meta span,
+    .pilot-meta strong,
+    .pilot-meta small {
+      display: block;
+    }
+
+    .pilot-meta span {
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.76rem;
+      font-weight: 800;
+    }
+
+    .pilot-meta strong {
+      font-size: 1.45rem;
+      margin-top: 6px;
+    }
+
+    .pilot-meta p {
+      margin: 8px 0 0;
+      color: #d6e5ff;
+      line-height: 1.45;
+      font-size: 0.95rem;
+    }
+
+    .pilot-meta small {
+      margin-top: 10px;
+      color: #a5bedf;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
     .status-strip {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -277,6 +336,44 @@
       justify-content: center;
       flex-wrap: wrap;
       margin-top: 18px;
+    }
+
+    .choice-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .choice-btn {
+      border-radius: 18px;
+      padding: 14px 12px;
+      background: rgba(13, 24, 40, 0.92);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: white;
+      box-shadow: none;
+    }
+
+    .choice-btn.active {
+      background: linear-gradient(180deg, #37afff, #2156dd);
+      border-color: rgba(160, 223, 255, 0.58);
+    }
+
+    .choice-btn strong,
+    .choice-btn span {
+      display: block;
+    }
+
+    .choice-btn strong {
+      font-size: 1rem;
+      letter-spacing: 0.08em;
+    }
+
+    .choice-btn span {
+      margin-top: 6px;
+      color: #d4e7ff;
+      font-size: 0.8rem;
+      line-height: 1.35;
     }
 
     button {
@@ -419,8 +516,16 @@
       }
 
       .status-strip,
-      .stat-grid {
+      .stat-grid,
+      .choice-grid,
+      .pilot-card {
         grid-template-columns: 1fr;
+      }
+
+      .pilot-portrait {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 1;
       }
 
       .touch-btn {
@@ -450,7 +555,17 @@
     <section class="game-layout">
       <aside class="info-panel">
         <h2>Mission Brief</h2>
-        <p>Fly through a stormfront, shred attack waves, collect upgrades, and bring down the flagship. The pacing is tuned to feel close to a Raiden-style arcade run without copying the original game’s assets or layout.</p>
+        <p>Fly through a stormfront, shred attack waves, collect upgrades, and bring down the flagship. The pacing is tuned to feel close to a Raiden-style arcade run without copying the original game's assets or layout.</p>
+
+        <div class="pilot-card">
+          <img class="pilot-portrait" id="pilotPortrait" alt="Selected pilot portrait">
+          <div class="pilot-meta">
+            <span>Pilot Profile</span>
+            <strong id="pilotName">Pilot Addie</strong>
+            <p id="pilotBio">Ace flyer Addie leads the strike with fast reactions, steady aim, and confident radio calls.</p>
+            <small id="pilotShip">Fighter: Aurora Vixen</small>
+          </div>
+        </div>
 
         <div class="stat-grid">
           <div class="mini-card">
@@ -485,6 +600,17 @@
             <div class="panel">
               <h2>Scramble</h2>
               <p>Launch into the strike corridor and survive the assault waves.</p>
+              <p><strong>Call Sign Check:</strong> Are you Pilot <strong>ADDIE</strong> or Pilot <strong>SKY</strong>?</p>
+              <div class="choice-grid">
+                <button class="choice-btn active" id="addieBtn" type="button">
+                  <strong>ADDIE</strong>
+                  <span>Girl pilot portrait and Aurora Vixen profile.</span>
+                </button>
+                <button class="choice-btn" id="skyBtn" type="button">
+                  <strong>SKY</strong>
+                  <span>Boy pilot portrait and Comet Ranger profile.</span>
+                </button>
+              </div>
               <p><strong>Keyboard:</strong> Move with WASD or arrows, bomb with B, pause with P.</p>
               <div class="actions">
                 <button id="startBtn">Play</button>
@@ -532,6 +658,10 @@
     const livesEl = document.getElementById("lives");
     const bombsEl = document.getElementById("bombs");
     const bestEl = document.getElementById("best");
+    const pilotPortraitEl = document.getElementById("pilotPortrait");
+    const pilotNameEl = document.getElementById("pilotName");
+    const pilotBioEl = document.getElementById("pilotBio");
+    const pilotShipEl = document.getElementById("pilotShip");
     const powerStatusEl = document.getElementById("powerStatus");
     const stageStatusEl = document.getElementById("stageStatus");
     const startOverlay = document.getElementById("startOverlay");
@@ -547,11 +677,14 @@
     const bossFill = document.getElementById("bossFill");
     const bossLabel = document.getElementById("bossLabel");
     const soundBtn = document.getElementById("soundBtn");
+    const addieBtn = document.getElementById("addieBtn");
+    const skyBtn = document.getElementById("skyBtn");
 
     const WIDTH = canvas.width;
     const HEIGHT = canvas.height;
     const BEST_KEY = "sky-ace-assault-best-score";
     const SOUND_KEY = "sky-ace-assault-sound-enabled";
+    const PILOT_KEY = "sky-ace-assault-pilot";
 
     const input = {
       left: false,
@@ -590,6 +723,7 @@
       hazards: [],
       boss: null,
       soundEnabled: localStorage.getItem(SOUND_KEY) !== "off",
+      pilot: localStorage.getItem(PILOT_KEY) === "SKY" ? "SKY" : "ADDIE",
       player: {
         x: WIDTH / 2,
         y: HEIGHT - 120,
@@ -606,6 +740,43 @@
 
     let audioContext;
     let masterGain;
+
+    function getPilotProfile(pilot) {
+      if (pilot === "SKY") {
+        return {
+          code: "SKY",
+          name: "Pilot Sky",
+          bio: "Sky keeps the squad calm under pressure and drives the assault lane with disciplined, high-speed attack runs.",
+          ship: "Fighter: Comet Ranger",
+          portrait: "pilot-sky-anime.png"
+        };
+      }
+
+      return {
+        code: "ADDIE",
+        name: "Pilot Addie",
+        bio: "Ace flyer Addie leads the strike with fast reactions, steady aim, and confident radio calls over the stormfront.",
+        ship: "Fighter: Aurora Vixen",
+        portrait: "pilot-addie-anime.png"
+      };
+    }
+
+    function updatePilotUi() {
+      const profile = getPilotProfile(state.pilot);
+      pilotPortraitEl.src = profile.portrait;
+      pilotPortraitEl.alt = `${profile.name} portrait`;
+      pilotNameEl.textContent = profile.name;
+      pilotBioEl.textContent = profile.bio;
+      pilotShipEl.textContent = profile.ship;
+      addieBtn.classList.toggle("active", profile.code === "ADDIE");
+      skyBtn.classList.toggle("active", profile.code === "SKY");
+    }
+
+    function setPilot(pilot) {
+      state.pilot = pilot === "SKY" ? "SKY" : "ADDIE";
+      localStorage.setItem(PILOT_KEY, state.pilot);
+      updatePilotUi();
+    }
 
     function clamp(value, min, max) {
       return Math.max(min, Math.min(max, value));
@@ -862,6 +1033,7 @@
       state.player.bank = 0;
       updateHud();
       pauseBtn.textContent = "Pause";
+      updatePilotUi();
     }
 
     function startGame() {
@@ -2162,8 +2334,11 @@
     bombBtn.addEventListener("click", useBomb);
     pauseBtn.addEventListener("click", togglePause);
     soundBtn.addEventListener("click", toggleSound);
+    addieBtn.addEventListener("click", () => setPilot("ADDIE"));
+    skyBtn.addEventListener("click", () => setPilot("SKY"));
 
     initBackground();
+    updatePilotUi();
     updateHud();
     draw();
   </script>
