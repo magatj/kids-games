@@ -1740,32 +1740,152 @@
       ctx.translate(enemy.x, enemy.y);
 
       if (enemy.type === "scout") {
-        ctx.fillStyle = enemy.color;
+        const scoutBody = ctx.createLinearGradient(0, -24, 0, 24);
+        scoutBody.addColorStop(0, "#ffd2c9");
+        scoutBody.addColorStop(0.35, enemy.color);
+        scoutBody.addColorStop(1, "#6e1c2a");
+        ctx.fillStyle = scoutBody;
         ctx.beginPath();
-        ctx.moveTo(0, 22);
-        ctx.lineTo(16, -10);
-        ctx.lineTo(0, -18);
-        ctx.lineTo(-16, -10);
+        ctx.moveTo(0, -22);
+        ctx.lineTo(14, -4);
+        ctx.lineTo(11, 16);
+        ctx.lineTo(0, 22);
+        ctx.lineTo(-11, 16);
+        ctx.lineTo(-14, -4);
         ctx.closePath();
         ctx.fill();
-        ctx.fillStyle = "#5a1715";
-        ctx.fillRect(-24, -2, 48, 8);
+
+        ctx.fillStyle = "#3a0f1d";
+        ctx.beginPath();
+        ctx.moveTo(0, -18);
+        ctx.lineTo(8, -2);
+        ctx.lineTo(6, 16);
+        ctx.lineTo(0, 12);
+        ctx.lineTo(-6, 16);
+        ctx.lineTo(-8, -2);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = "#ffe0e4";
+        ctx.beginPath();
+        ctx.moveTo(-30, 8);
+        ctx.lineTo(-10, -2);
+        ctx.lineTo(-12, 12);
+        ctx.lineTo(-32, 16);
+        ctx.closePath();
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(30, 8);
+        ctx.lineTo(10, -2);
+        ctx.lineTo(12, 12);
+        ctx.lineTo(32, 16);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = "#78efff";
+        ctx.beginPath();
+        ctx.moveTo(0, -13);
+        ctx.lineTo(5, -4);
+        ctx.lineTo(0, 2);
+        ctx.lineTo(-5, -4);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = "#ff945b";
+        ctx.fillRect(-12, 18, 5, 7);
+        ctx.fillRect(7, 18, 5, 7);
       } else if (enemy.type === "spinner") {
-        ctx.rotate(Math.sin(enemy.angle) * 0.2);
-        ctx.fillStyle = enemy.color;
-        ctx.fillRect(-24, -10, 48, 20);
-        ctx.fillRect(-10, -22, 20, 44);
-        ctx.fillStyle = "#5b4c0c";
-        ctx.fillRect(-10, -10, 20, 20);
+        ctx.rotate(Math.sin(enemy.angle) * 0.22);
+
+        const droneBody = ctx.createLinearGradient(0, -26, 0, 26);
+        droneBody.addColorStop(0, "#fff1bf");
+        droneBody.addColorStop(0.4, enemy.color);
+        droneBody.addColorStop(1, "#73590d");
+        ctx.fillStyle = droneBody;
+        ctx.beginPath();
+        ctx.moveTo(0, -24);
+        ctx.lineTo(18, -12);
+        ctx.lineTo(24, 0);
+        ctx.lineTo(18, 12);
+        ctx.lineTo(0, 24);
+        ctx.lineTo(-18, 12);
+        ctx.lineTo(-24, 0);
+        ctx.lineTo(-18, -12);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = "#42360a";
+        ctx.beginPath();
+        ctx.arc(0, 0, 11, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#8af4ff";
+        ctx.beginPath();
+        ctx.arc(0, 0, 4, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#f7d86f";
+        ctx.fillRect(-32, -4, 14, 8);
+        ctx.fillRect(18, -4, 14, 8);
+        ctx.fillRect(-4, -32, 8, 14);
+        ctx.fillRect(-4, 18, 8, 14);
+
+        ctx.fillStyle = "#ffb369";
+        ctx.fillRect(-22, 16, 4, 8);
+        ctx.fillRect(18, 16, 4, 8);
       } else {
-        ctx.fillStyle = "#5269a0";
-        ctx.fillRect(-26, -18, 52, 46);
-        ctx.fillStyle = enemy.color;
-        ctx.fillRect(-16, -28, 32, 20);
-        ctx.fillStyle = "#d9e7ff";
-        ctx.fillRect(-18, 6, 36, 10);
-        ctx.fillStyle = "#25345f";
-        ctx.fillRect(-34, -4, 68, 10);
+        const gunshipBody = ctx.createLinearGradient(0, -34, 0, 30);
+        gunshipBody.addColorStop(0, "#dde7ff");
+        gunshipBody.addColorStop(0.32, enemy.color);
+        gunshipBody.addColorStop(1, "#24375f");
+        ctx.fillStyle = gunshipBody;
+        ctx.beginPath();
+        ctx.moveTo(0, -30);
+        ctx.lineTo(22, -16);
+        ctx.lineTo(26, 16);
+        ctx.lineTo(10, 30);
+        ctx.lineTo(-10, 30);
+        ctx.lineTo(-26, 16);
+        ctx.lineTo(-22, -16);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = "#27385e";
+        ctx.beginPath();
+        ctx.moveTo(0, -28);
+        ctx.lineTo(14, -10);
+        ctx.lineTo(12, 20);
+        ctx.lineTo(0, 12);
+        ctx.lineTo(-12, 20);
+        ctx.lineTo(-14, -10);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = "#d8ebff";
+        ctx.beginPath();
+        ctx.moveTo(-40, 10);
+        ctx.lineTo(-18, -4);
+        ctx.lineTo(-20, 16);
+        ctx.lineTo(-44, 20);
+        ctx.closePath();
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(40, 10);
+        ctx.lineTo(18, -4);
+        ctx.lineTo(20, 16);
+        ctx.lineTo(44, 20);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = "#9ff6ff";
+        ctx.fillRect(-10, -18, 20, 8);
+        ctx.fillRect(-26, 10, 10, 5);
+        ctx.fillRect(16, 10, 10, 5);
+
+        ctx.fillStyle = "#ffab5a";
+        ctx.fillRect(-16, 24, 7, 10);
+        ctx.fillRect(-3, 26, 6, 8);
+        ctx.fillRect(9, 24, 7, 10);
       }
 
       ctx.restore();
@@ -1780,20 +1900,65 @@
       ctx.save();
       ctx.translate(boss.x, boss.y);
 
-      ctx.fillStyle = "#556b96";
-      ctx.fillRect(-125, -28, 250, 72);
-      ctx.fillStyle = "#91a8d6";
-      ctx.fillRect(-80, -54, 160, 30);
-      ctx.fillStyle = "#293551";
-      ctx.fillRect(-110, -8, 220, 24);
-      ctx.fillStyle = "#ffc36c";
-      ctx.fillRect(-100, 20, 26, 16);
-      ctx.fillRect(74, 20, 26, 16);
-      ctx.fillStyle = "#b2f5ff";
-      ctx.fillRect(-24, -42, 48, 16);
+      const carrierBody = ctx.createLinearGradient(0, -58, 0, 48);
+      carrierBody.addColorStop(0, "#dce7ff");
+      carrierBody.addColorStop(0.28, "#7a93c4");
+      carrierBody.addColorStop(1, "#26334f");
+      ctx.fillStyle = carrierBody;
+      ctx.beginPath();
+      ctx.moveTo(0, -58);
+      ctx.lineTo(96, -42);
+      ctx.lineTo(128, -6);
+      ctx.lineTo(116, 34);
+      ctx.lineTo(52, 48);
+      ctx.lineTo(-52, 48);
+      ctx.lineTo(-116, 34);
+      ctx.lineTo(-128, -6);
+      ctx.lineTo(-96, -42);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = "#25324f";
+      ctx.beginPath();
+      ctx.moveTo(0, -52);
+      ctx.lineTo(62, -28);
+      ctx.lineTo(80, 8);
+      ctx.lineTo(38, 28);
+      ctx.lineTo(-38, 28);
+      ctx.lineTo(-80, 8);
+      ctx.lineTo(-62, -28);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = "#e8f3ff";
+      ctx.beginPath();
+      ctx.moveTo(-146, 6);
+      ctx.lineTo(-74, -14);
+      ctx.lineTo(-82, 20);
+      ctx.lineTo(-152, 28);
+      ctx.closePath();
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(146, 6);
+      ctx.lineTo(74, -14);
+      ctx.lineTo(82, 20);
+      ctx.lineTo(152, 28);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = "#8ff6ff";
+      ctx.fillRect(-26, -34, 52, 12);
+      ctx.fillRect(-84, 12, 18, 6);
+      ctx.fillRect(66, 12, 18, 6);
+
       ctx.fillStyle = "#ff6d73";
-      ctx.fillRect(-124, -18, 24, 44);
-      ctx.fillRect(100, -18, 24, 44);
+      ctx.fillRect(-122, -14, 22, 42);
+      ctx.fillRect(100, -14, 22, 42);
+
+      ctx.fillStyle = "#ffb86e";
+      ctx.fillRect(-88, 30, 18, 16);
+      ctx.fillRect(-12, 36, 24, 12);
+      ctx.fillRect(70, 30, 18, 16);
 
       if (boss.phase === 2) {
         ctx.strokeStyle = "rgba(127, 231, 255, 0.65)";
