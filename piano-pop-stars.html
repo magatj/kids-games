@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Piano Pop Stars 🎹</title>
+<title>Addie's Super Piano Game 🎹</title>
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body {
@@ -200,7 +200,7 @@
 
   <!-- Start menu -->
   <div id="menu" class="overlay">
-    <h1>Piano Pop Stars</h1>
+    <h1>Addie's Super Piano Game</h1>
     <p>Tap the falling tiles in time<br>to play the song! 🎶</p>
     <div class="difflabel">Difficulty</div>
     <div class="diffrow" id="diffrow"></div>
@@ -286,6 +286,39 @@
     o.start(now); o.stop(now+0.32);
   }
 
+  // ---------- Voice (real text-to-speech vocals) ----------
+  let ttsVoice = null, ttsReady = false;
+  function initVoices(){
+    if(!('speechSynthesis' in window)) return;
+    const pick = ()=>{
+      const vs = speechSynthesis.getVoices();
+      if(!vs.length) return;
+      // prefer an English voice, favour ones that sound brighter/female
+      ttsVoice = vs.find(v=>/en(-|_)?(US|GB)/i.test(v.lang) && /female|samantha|zira|google us|aria|jenny/i.test(v.name))
+              || vs.find(v=>/^en/i.test(v.lang))
+              || vs[0];
+      ttsReady = true;
+    };
+    pick();
+    speechSynthesis.onvoiceschanged = pick;
+  }
+  function sing(text, pitch){
+    if(!bt.on || !('speechSynthesis' in window)) return;
+    const u = new SpeechSynthesisUtterance(text);
+    if(ttsVoice) u.voice = ttsVoice;
+    u.rate = 1.05;
+    u.pitch = pitch || 1.6;   // high & peppy
+    u.volume = 1;
+    try { speechSynthesis.speak(u); } catch(e){}
+  }
+  // schedule a sung word to fire in sync with audio-clock time t
+  function scheduleVoice(text, t){
+    const ac = audio();
+    const delay = Math.max(0, (t - ac.currentTime) * 1000);
+    const pitch = 1.45 + Math.random()*0.45;
+    setTimeout(()=>sing(text, pitch), delay);
+  }
+
   // ---------- Backing-track engine (drums + bass + chord pads) ----------
   let noiseBuf = null;
   function getNoise(){
@@ -365,6 +398,7 @@
   function stopBacking(){
     bt.on=false;
     if(bt.timer){ clearTimeout(bt.timer); bt.timer=null; }
+    if('speechSynthesis' in window){ try { speechSynthesis.cancel(); } catch(e){} }
   }
   function btSchedule(){
     if(!bt.on) return;
@@ -396,6 +430,13 @@
     // chord pad: sustain across the bar, restruck mid-bar for movement
     if(beat===0) pad(ch.notes, t, spb*2.1);
     if(beat===4) pad(ch.notes, t, spb*1.9);
+
+    // sung vocal hook (real device text-to-speech)
+    if(song.vocals){
+      const loopLen = song.chords.length * 8;
+      const word = song.vocals[step % loopLen];
+      if(word) scheduleVoice(word, t);
+    }
   }
 
   // ---------- Chord library (triad note sets + bass root) ----------
@@ -437,6 +478,15 @@
       chords:['G','D','Em','C'],
       melody:['G4','A4','B4','D5','B4','A4','G4','A4','B4','D5','E5','D5','B4','A4','G4','E4',
               'D4','E4','G4','A4','B4','A4','G4','E4','D4','G4','B4','D5','G5','D5','B4','G4']
+    },
+    {
+      id:'superstar', name:'Addie Superstar', sub:'K-pop · vocal hook 🎤', tempo:360, bpm:150,
+      chords:['C','G','Am','F'],
+      melody:['G4','C5','C5','B4','C5','D5','E5','D5','C5','G4','A4','G4','E4','G4','C5','B4',
+              'A4','G4','A4','C5','C5','B4','A4','G4','F4','A4','G4','F4','E4','D4','C4','G4'],
+      // sung by the device's text-to-speech voice, on the beat.
+      // keys = step index within the 32-step (4-bar) loop.
+      vocals:{ 0:'Addie', 6:'superstar', 16:'sing it with me', 24:'la la la', 28:'hey' }
     }
   ];
 
@@ -796,6 +846,7 @@
   });
 
   // ---------- Boot ----------
+  initVoices();
   layout(); buildLanes(); buildDiff(); buildMenu();
   document.getElementById('menuBest').textContent = '';
 })();
