@@ -104,6 +104,17 @@
     box-shadow: 0 3px 0 rgba(0,0,0,.2);
   }
   #pause:active { transform: translateY(2px); }
+  #levelBadge {
+    background: #2b5a1f;
+    color: #fff;
+    border: 3px solid #1c3c13;
+    border-radius: 30px;
+    padding: 6px 14px;
+    font-size: 1em;
+    font-weight: bold;
+    white-space: nowrap;
+    box-shadow: 0 3px 0 #1c3c13;
+  }
   /* ---------- Board ---------- */
   #board {
     position: relative;
@@ -147,6 +158,9 @@
     background:#5a2d2d; border-radius:3px; overflow:hidden;
   }
   .zombie .hpbar i { display:block; height:100%; background:#5fe35f; }
+  .zombie.boss { font-size: 62px; z-index: 3; }
+  .zombie.boss .hpbar { height: 7px; top: -4px; }
+  .zombie.boss .hpbar i { background:#ff5252; }
   .zombie.hit { animation: flash .15s; }
   @keyframes flash { 50% { filter: brightness(2.5) drop-shadow(0 3px 3px rgba(0,0,0,.4)); } }
   .pea {
@@ -213,6 +227,7 @@
 <div id="game">
   <div id="topbar">
     <div class="sun-counter">☀️ <span id="sun">1000</span></div>
+    <div id="levelBadge">Level 1/5</div>
     <div class="seed-bar" id="seedbar"></div>
     <div id="shovel" title="Dig up a plant">🪏</div>
     <div id="pause" title="Pause">⏸️</div>
@@ -225,14 +240,21 @@
     <div id="progress"><i></i></div>
     <div class="overlay" id="startScreen">
       <h1>🌻 Garden Defenders 🧟</h1>
-      <p>The zombies want to eat your garden! Plant flowers and shooters to stop them before they reach your house.</p>
+      <p>The zombies want to eat your garden! Plant flowers and shooters to stop them before they reach your house. Survive all <b>5 levels</b> — and beat the boss!</p>
       <div class="legend">
         <div>☀️ Collect <b>sun</b> to buy plants</div>
         <div>🌻 Sunflowers make more sun</div>
         <div>🌱 Pea-shooters fire at zombies</div>
         <div>🥜 Walnuts block the path</div>
+        <div>❄️ Snow-peas shoot <b>and slow</b> zombies</div>
+        <div>🍉 Melons hit hard with <b>splash damage</b></div>
       </div>
       <button class="btn" id="startBtn">Start Planting!</button>
+    </div>
+    <div class="overlay hide" id="levelScreen">
+      <h1 id="levelTitle"></h1>
+      <p id="levelMsg"></p>
+      <button class="btn" id="nextLevelBtn">Next Level →</button>
     </div>
     <div class="overlay hide" id="pauseScreen">
       <h1>⏸️ Paused</h1>
@@ -335,23 +357,77 @@
   // ---------- Wave plan ----------
   // each wave = list of zombie types spawned over time
   const ZTYPES = {
-    basic:  { emoji:'🧟', hp:5,  speed:16, dmg:1 },
-    cone:   { emoji:'🧟‍♂️', hp:10, speed:15, dmg:1 },
-    bucket: { emoji:'🧟‍♀️', hp:18, speed:13, dmg:2 },
-    fast:   { emoji:'🏃', hp:4,  speed:32, dmg:1 },
+    basic:  { emoji:'🧟', hp:5,   speed:16, dmg:1 },
+    cone:   { emoji:'🧟‍♂️', hp:10,  speed:15, dmg:1 },
+    bucket: { emoji:'🧟‍♀️', hp:18,  speed:13, dmg:2 },
+    fast:   { emoji:'🏃', hp:4,   speed:32, dmg:1 },
+    boss:   { emoji:'👹', hp:110, speed:7,  dmg:6, boss:true },
   };
-  function buildWaves(){
-    return [
-      ['basic','basic'],
-      ['basic','basic','cone'],
-      ['basic','fast','basic','cone'],
-      ['cone','cone','basic','fast'],
-      ['bucket','basic','cone','fast','basic'],
-      ['fast','fast','cone','bucket','basic','cone'],
-      ['bucket','bucket','cone','cone','fast','fast','basic','basic'],
-    ];
-  }
+  // ---------- Levels (gradual ramp, fresh start each level) ----------
+  const LEVELS = [
+    {
+      name: 'Sunny Garden',
+      bg: 'linear-gradient(180deg,#5fae3c,#4a9e3a)',
+      sun: 1000, gap: 22000,
+      waves: [
+        ['basic','basic'],
+        ['basic','basic','cone'],
+        ['basic','fast','basic','cone'],
+        ['cone','cone','basic','fast'],
+      ],
+    },
+    {
+      name: 'Flower Field',
+      bg: 'linear-gradient(180deg,#6bbf4a,#3f9c4f)',
+      sun: 900, gap: 20000,
+      waves: [
+        ['basic','cone','basic'],
+        ['cone','fast','cone','basic'],
+        ['bucket','basic','cone','fast'],
+        ['cone','cone','fast','fast','basic'],
+        ['bucket','cone','bucket','basic','fast'],
+      ],
+    },
+    {
+      name: 'Dusk Garden',
+      bg: 'linear-gradient(180deg,#a85a3c,#6e3b6b)',
+      sun: 850, gap: 18000,
+      waves: [
+        ['cone','cone','fast','basic'],
+        ['bucket','fast','cone','fast'],
+        ['bucket','bucket','cone','basic','fast'],
+        ['fast','fast','fast','cone','bucket'],
+        ['bucket','bucket','cone','cone','fast','basic'],
+      ],
+    },
+    {
+      name: 'Night Garden',
+      bg: 'linear-gradient(180deg,#26395e,#16223d)',
+      sun: 800, gap: 16000,
+      waves: [
+        ['bucket','cone','fast','cone'],
+        ['bucket','bucket','fast','fast','cone'],
+        ['fast','fast','fast','fast','bucket'],
+        ['bucket','bucket','cone','cone','fast','fast'],
+        ['bucket','bucket','bucket','fast','fast','cone','basic'],
+      ],
+    },
+    {
+      name: 'The Graveyard',
+      bg: 'linear-gradient(180deg,#3a3340,#211d29)',
+      sun: 800, gap: 15000,
+      waves: [
+        ['bucket','bucket','fast','cone','fast'],
+        ['bucket','bucket','bucket','fast','fast','cone'],
+        ['fast','fast','fast','bucket','bucket','cone','cone'],
+        ['bucket','bucket','bucket','bucket','fast','fast','cone'],
+        ['boss','bucket','bucket','fast','fast','cone','cone','basic'],
+      ],
+    },
+  ];
+  let levelIndex = 0;
   let WAVES;
+  function buildWaves(){ return LEVELS[levelIndex].waves.map(w=>w.slice()); }
 
   // ---------- Build UI ----------
   function buildGrid(){
@@ -477,7 +553,7 @@
     const t = ZTYPES[type];
     const r = (row==null)? Math.floor(Math.random()*ROWS) : row;
     const el=document.createElement('div');
-    el.className='ent zombie';
+    el.className='ent zombie'+(t.boss?' boss':'');
     el.style.width=cellW+'px'; el.style.height=cellH+'px';
     el.innerHTML=`<span class="z">${t.emoji}</span><div class="hpbar"><i></i></div>`;
     entLayer.appendChild(el);
@@ -488,9 +564,14 @@
   }
 
   // ---------- Game loop ----------
-  function startGame(){
+  function startGame(){ levelIndex=0; startLevel(); }
+
+  function startLevel(){
+    const lvl = LEVELS[levelIndex];
     layout(); buildGrid(); buildSeeds();
-    sun=1000; plants=[]; zombies=[]; peas=[]; suns=[]; pops=[];
+    board.style.background = lvl.bg;
+    document.getElementById('levelBadge').textContent = 'Level '+(levelIndex+1)+'/'+LEVELS.length;
+    sun=lvl.sun; plants=[]; zombies=[]; peas=[]; suns=[]; pops=[];
     selected=null; shovelMode=false; cooldowns={};
     SEED_ORDER.forEach(k=>cooldowns[k]=0);
     WAVES = buildWaves();
@@ -501,6 +582,10 @@
     document.getElementById('startScreen').classList.add('hide');
     document.getElementById('endScreen').classList.add('hide');
     document.getElementById('pauseScreen').classList.add('hide');
+    document.getElementById('levelScreen').classList.add('hide');
+    // announce the level
+    waveBanner.textContent = lvl.name;
+    waveBanner.classList.remove('show'); void waveBanner.offsetWidth; waveBanner.classList.add('show');
     running=true; paused=false; lastTime=performance.now(); sunTimer=4000;
     requestAnimationFrame(loop);
   }
@@ -553,7 +638,7 @@
           // all waves done and cleared
           if(zombies.length===0){ win(); return; }
         } else {
-          nextWave(); betweenWaves=22000;
+          nextWave(); betweenWaves=LEVELS[levelIndex].gap;
         }
       }
     }
@@ -683,10 +768,21 @@
   }
 
   function win(){
-    running=false; SFX.win();
-    document.getElementById('endTitle').textContent='🏆 You Win!';
-    document.getElementById('endMsg').textContent='Your garden is safe! You defended against all the zombies. Great job, Garden Defender!';
-    document.getElementById('endScreen').classList.remove('hide');
+    running=false;
+    if(levelIndex < LEVELS.length-1){
+      // level cleared — advance
+      SFX.win();
+      const next = LEVELS[levelIndex+1];
+      document.getElementById('levelTitle').textContent='✅ Level '+(levelIndex+1)+' Cleared!';
+      document.getElementById('levelMsg').textContent='Nice work! Next up: '+next.name+'. The zombies are getting tougher — plant a fresh garden!';
+      document.getElementById('levelScreen').classList.remove('hide');
+    } else {
+      // beat the final level
+      SFX.win();
+      document.getElementById('endTitle').textContent='🏆 You Beat the Game!';
+      document.getElementById('endMsg').textContent='You cleared all '+LEVELS.length+' levels and even defeated the boss! You are the ultimate Garden Defender!';
+      document.getElementById('endScreen').classList.remove('hide');
+    }
   }
   function lose(){
     running=false; SFX.lose();
@@ -706,6 +802,7 @@
   }
   document.getElementById('pause').addEventListener('click', ()=>setPaused(!paused));
   document.getElementById('resumeBtn').addEventListener('click', ()=>setPaused(false));
+  document.getElementById('nextLevelBtn').addEventListener('click', ()=>{ audio(); levelIndex++; startLevel(); });
   window.addEventListener('resize', ()=>{ if(running){ layout();
     // reposition plants
     plants.forEach(p=>{ if(p.alive){ p.el.style.width=cellW+'px'; p.el.style.height=cellH+'px'; p.el.style.transform=`translate(${p.c*cellW}px,${p.r*cellH}px)`; }});
