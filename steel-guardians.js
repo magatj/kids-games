@@ -12,7 +12,7 @@ const heroInfo=[{name:'Atlas Prime',title:'Atlas<span>Prime</span>',description:
 const heroes=[art.makeRobot(0),art.makeRobot(1)],previews=[art.makeRobot(0),art.makeRobot(1)];
 let heroType=0,player=heroes[0],preview=previews[0];scene.add(player,preview);
 preview.position.set(3.3,0,-4.5);preview.rotation.y=-.32;art.poseRobot(preview,1,0);
-const keys={},enemies=[],pickups=[];
+const keys={},enemies=[],pickups=[],stick={x:0,y:0,id:null};
 const state={mode:'menu',car:false,morph:0,morphFrom:0,morphTo:0,transformTime:0,transforming:false,health:100,energy:100,speed:0,heading:0,wave:0,kills:0,waveTotal:0,shot:0,pulse:0,hurt:0,toast:0,nextWave:0,time:0,roam:false,score:0,objectiveTime:0,shake:0,aim:0,selection:0,boost:false,turn:0,elapsed:0};
 // All audio is synthesized locally. These named hooks can later accept original samples.
 const AudioBus=(()=>{
@@ -122,7 +122,7 @@ function updateShots(dt){
   if(hit||s.life<=0){releaseShot(s);shots.splice(i,1);}
  }
 }
-function clearKeys(){for(const key in keys)delete keys[key];}
+function clearKeys(){for(const key in keys)delete keys[key];releaseStick();}
 function resetWorld(){for(const e of enemies){scene.remove(e.model);art.disposeEnemy(e.model);}enemies.length=0;for(const p of pickups)scene.remove(p.model);pickups.length=0;for(const s of shots)releaseShot(s);shots.length=0;art.clearEffects();}
 function start(){
  AudioBus.unlock();resetWorld();Object.assign(state,{mode:'playing',car:false,morph:0,transforming:false,transformTime:0,health:100,energy:100,speed:0,heading:Math.PI,wave:0,kills:0,shot:0,pulse:0,hurt:0,nextWave:0,roam:false,score:0,shake:0,aim:0,elapsed:0,boost:false});player.position.set(0,0,15);player.rotation.set(0,Math.PI,0);art.poseRobot(player,0,state.time);scene.remove(preview);clearKeys();$('menu').hidden=true;$('dialog').hidden=true;$('hud').hidden=false;$('pause').hidden=false;document.body.classList.add('playing');document.body.classList.remove('transforming','vehicle','aiming');cameraHeading=Math.PI;camera.position.set(-2,5.5,28);cameraFocus.copy(player.position).add(V(0,3.2,-3));spawnWave();
@@ -167,13 +167,13 @@ function drawRadar(){
 function updateHUD(dt){
  hudTick+=dt;if(hudTick<.08)return;hudTick=0;
  $('health').style.width=state.health+'%';$('health').style.background=state.health<30?'#d89486':'#dce7ed';$('healthText').innerHTML=Math.ceil(state.health)+'<span>%</span>';$('energy').style.width=state.energy+'%';$('energyText').textContent=Math.ceil(state.energy)+'%';$('form').textContent=state.transforming?'Shifting':state.car?'Vehicle':'Robot';$('speed').textContent=Math.round(Math.abs(state.speed)*5);$('wave').textContent=state.roam?'Free drive':'Wave '+state.wave+' of 3';$('remaining').textContent=state.roam?'':state.kills+' / '+state.waveTotal;$('waveProgress').style.width=(state.waveTotal?state.kills/state.waveTotal*100:0)+'%';
- $('ability').textContent=state.pulse>0?Math.ceil(state.pulse)+'s':'Shockwave';$('pulseCooldown').style.transform='scaleX('+state.pulse/7+')';$('pulse').setAttribute('aria-label',state.pulse>0?'Shockwave ready in '+Math.ceil(state.pulse)+' seconds':'Shockwave (E)');$('missionTitle').textContent=state.roam?'City secured':'City Shield';$('objective').textContent=state.roam?'Make the city your own.':state.wave===3?'Neutralize the Iron Titan':'Neutralize hostile units';$('mission').classList.toggle('visible',state.objectiveTime>0);$('radarCaption').textContent=state.roam?'City secured':enemies.length+' hostiles';
+ $('ability').textContent=state.pulse>0?Math.ceil(state.pulse)+'s':'Shockwave';$('touchPulseText').textContent=state.pulse>0?Math.ceil(state.pulse)+'s':'Shock';$('touchPulse').classList.toggle('cooling',state.pulse>0);$('pulseCooldown').style.transform='scaleX('+state.pulse/7+')';$('pulse').setAttribute('aria-label',state.pulse>0?'Shockwave ready in '+Math.ceil(state.pulse)+' seconds':'Shockwave (E)');$('missionTitle').textContent=state.roam?'City secured':'City Shield';$('objective').textContent=state.roam?'Make the city your own.':state.wave===3?'Neutralize the Iron Titan':'Neutralize hostile units';$('mission').classList.toggle('visible',state.objectiveTime>0);$('radarCaption').textContent=state.roam?'City secured':enemies.length+' hostiles';
  $('toast').style.opacity=state.toast>0?1:0;$('damageFlash').style.opacity=state.hurt*.7;$('controlHint').style.opacity=state.elapsed<14?1:0;
  document.body.classList.toggle('vehicle',state.morph>.5);document.body.classList.toggle('aiming',state.aim>.1);const e=target();$('reticle').classList.toggle('locked',!!e);$('targetLabel').textContent=e?(e.boss?'Iron Titan':e.kind[0].toUpperCase()+e.kind.slice(1))+' · '+Math.ceil(e.health/e.max*100)+'%':'';drawRadar();
 }
 function update(dt){
  state.time+=dt;state.elapsed+=dt;for(const key of ['shot','pulse','hurt','toast','objectiveTime','aim'])state[key]=Math.max(0,state[key]-dt);state.shake=Math.max(0,state.shake-dt*.55);state.selection=Math.max(0,state.selection-dt*.8);updateTransformation(dt);
- const forward=(keys.KeyW||keys.ArrowUp?1:0)-(keys.KeyS||keys.ArrowDown?1:0),turn=(keys.KeyA||keys.ArrowLeft?1:0)-(keys.KeyD||keys.ArrowRight?1:0),boost=!!((keys.ShiftLeft||keys.ShiftRight)&&forward>0&&state.energy>2);
+ const forward=clamp((keys.KeyW||keys.ArrowUp?1:0)-(keys.KeyS||keys.ArrowDown?1:0)-stick.y,-1,1),turn=clamp((keys.KeyA||keys.ArrowLeft?1:0)-(keys.KeyD||keys.ArrowRight?1:0)-stick.x,-1,1),boost=!!((keys.ShiftLeft||keys.ShiftRight)&&forward>0&&state.energy>2);
  if(boost&&!state.boost)AudioBus.play('boost');state.boost=boost;state.turn=turn;
  const max=mix(heroType?10:8,heroType?29:23,state.morph);state.speed=mix(state.speed,forward*max*(boost?1.75:1),1-Math.exp(-dt*mix(8,2.5,state.morph)));state.energy=clamp(state.energy+(boost?-24:14)*dt,0,100);state.heading+=turn*dt*mix(2.6,1.55,state.morph)*(state.speed<-.5?-1:1);player.rotation.y=state.heading;
  const old=player.position.clone();move(player,Math.sin(state.heading)*state.speed*dt,Math.cos(state.heading)*state.speed*dt,state.car?.2:.4);if(player.position.distanceTo(old)<Math.abs(state.speed)*dt*.25)state.speed*=.7;art.poseRobot(player,state.morph,state.time,state.speed,dt,turn);
@@ -186,7 +186,7 @@ function update(dt){
 }
 function refreshQuality(){const q=art.getQuality(),label=['Low','Medium','High'][q];$('quality').innerHTML=label+' <span>⌄</span>';$('quality').setAttribute('aria-label','Graphics quality: '+label);document.body.classList.toggle('low-quality',q===0);}
 function userAction(action){return ()=>{AudioBus.unlock();action();};}
-$('start').onclick=start;$('preview').onclick=transform;$('transform').onclick=transform;$('touchTransform').onclick=transform;$('pulse').onclick=userAction(pulse);$('switch').onclick=()=>changeHero(1-heroType);$('pause').onclick=pause;$('restart').onclick=start;$('resume').onclick=resume;
+$('start').onclick=start;$('preview').onclick=transform;$('transform').onclick=transform;$('touchTransform').onclick=transform;$('touchPulse').onclick=userAction(pulse);$('touchSwitch').onclick=()=>changeHero(1-heroType);$('pulse').onclick=userAction(pulse);$('switch').onclick=()=>changeHero(1-heroType);$('pause').onclick=pause;$('restart').onclick=start;$('resume').onclick=resume;
 $('help').onclick=()=>{state.mode='help';showDialog('Your city. Your rules.','Become a guardian.','Defeat three waves of the Iron Legion, then enjoy free driving.','Got it ↗');};
 $('sound').onclick=()=>{const muted=AudioBus.toggle();$('sound').setAttribute('aria-pressed',String(muted));$('sound').setAttribute('aria-label',muted?'Enable sound':'Mute sound');};
 $('quality').onclick=()=>{art.setQuality((art.getQuality()+1)%3);refreshQuality();};
@@ -195,6 +195,25 @@ for(const b of document.querySelectorAll('[data-key]')){
  b.addEventListener('pointerdown',e=>{e.preventDefault();AudioBus.unlock();b.setPointerCapture(e.pointerId);keys[b.dataset.key]=true;});
  for(const event of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(event,()=>delete keys[b.dataset.key]);
 }
+// Touch joystick: analog drive/steer. Up = forward, down = reverse, sideways = steer.
+const stickEl=$('stick'),knob=$('stickKnob');
+function moveStick(e){
+ const r=stickEl.getBoundingClientRect(),radius=r.width*.42;
+ let dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2);const len=Math.hypot(dx,dy);
+ if(len>radius){dx*=radius/len;dy*=radius/len;}
+ knob.style.transform='translate(calc(-50% + '+dx+'px),calc(-50% + '+dy+'px))';
+ const shape=v=>{const a=Math.abs(v);return a<.18?0:Math.sign(v)*Math.min(1,(a-.18)/.62);};
+ stick.x=shape(dx/radius);stick.y=shape(dy/radius);
+}
+function releaseStick(){stick.x=stick.y=0;stick.id=null;if(knob)knob.style.transform='';stickEl&&stickEl.classList.remove('active');}
+stickEl.addEventListener('pointerdown',e=>{e.preventDefault();AudioBus.unlock();stick.id=e.pointerId;stickEl.setPointerCapture(e.pointerId);stickEl.classList.add('active');moveStick(e);});
+stickEl.addEventListener('pointermove',e=>{if(e.pointerId===stick.id)moveStick(e);});
+for(const event of ['pointerup','pointercancel','lostpointercapture'])stickEl.addEventListener(event,e=>{if(e.pointerId===stick.id)releaseStick();});
+// Show touch controls on touch devices, including touchscreen laptops that report a mouse.
+function enableTouch(){document.body.classList.add('touch-mode');}
+if(matchMedia('(any-pointer: coarse)').matches||navigator.maxTouchPoints>0&&!matchMedia('(any-pointer: fine)').matches)enableTouch();
+addEventListener('pointerdown',e=>{if(e.pointerType==='touch'||e.pointerType==='pen')enableTouch();},true);
+addEventListener('touchstart',enableTouch,{capture:true,passive:true});
 addEventListener('keydown',e=>{
  if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)&&state.mode==='playing')e.preventDefault();keys[e.code]=true;if(e.repeat)return;
  if(e.code==='KeyT')transform();if(e.code==='KeyC')changeHero(1-heroType);if(e.code==='KeyE')pulse();if(e.code==='Escape'||e.code==='KeyP'){if(state.mode==='help')resume();else pause();}if(e.code==='Enter'&&state.mode==='menu')start();
