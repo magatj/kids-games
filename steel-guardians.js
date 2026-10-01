@@ -12,7 +12,7 @@ const heroInfo=[{name:'Atlas Prime',title:'Atlas<span>Prime</span>',description:
 const heroes=[art.makeRobot(0),art.makeRobot(1)],previews=[art.makeRobot(0),art.makeRobot(1)];
 let heroType=0,player=heroes[0],preview=previews[0];scene.add(player,preview);
 preview.position.set(3.3,0,-4.5);preview.rotation.y=-.32;art.poseRobot(preview,1,0);
-const keys={},enemies=[],pickups=[],stick={x:0,y:0,id:null};
+const keys={},enemies=[],pickups=[],stick={x:0,y:0,id:null},flick={cruise:0,turn:0,boost:0};
 const state={mode:'menu',car:false,morph:0,morphFrom:0,morphTo:0,transformTime:0,transforming:false,health:100,energy:100,speed:0,heading:0,wave:0,kills:0,waveTotal:0,shot:0,pulse:0,hurt:0,toast:0,nextWave:0,time:0,roam:false,score:0,objectiveTime:0,shake:0,aim:0,selection:0,boost:false,turn:0,elapsed:0};
 // All audio is synthesized locally. These named hooks can later accept original samples.
 const AudioBus=(()=>{
@@ -125,7 +125,7 @@ function updateShots(dt){
 function clearKeys(){for(const key in keys)delete keys[key];releaseStick();}
 function resetWorld(){for(const e of enemies){scene.remove(e.model);art.disposeEnemy(e.model);}enemies.length=0;for(const p of pickups)scene.remove(p.model);pickups.length=0;for(const s of shots)releaseShot(s);shots.length=0;art.clearEffects();}
 function start(){
- AudioBus.unlock();resetWorld();Object.assign(state,{mode:'playing',car:false,morph:0,transforming:false,transformTime:0,health:100,energy:100,speed:0,heading:Math.PI,wave:0,kills:0,shot:0,pulse:0,hurt:0,nextWave:0,roam:false,score:0,shake:0,aim:0,elapsed:0,boost:false});player.position.set(0,0,15);player.rotation.set(0,Math.PI,0);art.poseRobot(player,0,state.time);scene.remove(preview);clearKeys();$('menu').hidden=true;$('dialog').hidden=true;$('hud').hidden=false;$('pause').hidden=false;document.body.classList.add('playing');document.body.classList.remove('transforming','vehicle','aiming');cameraHeading=Math.PI;camera.position.set(-2,5.5,28);cameraFocus.copy(player.position).add(V(0,3.2,-3));spawnWave();
+ AudioBus.unlock();resetWorld();Object.assign(flick,{cruise:0,turn:0,boost:0});Object.assign(state,{mode:'playing',car:false,morph:0,transforming:false,transformTime:0,health:100,energy:100,speed:0,heading:Math.PI,wave:0,kills:0,shot:0,pulse:0,hurt:0,nextWave:0,roam:false,score:0,shake:0,aim:0,elapsed:0,boost:false});player.position.set(0,0,15);player.rotation.set(0,Math.PI,0);art.poseRobot(player,0,state.time);scene.remove(preview);clearKeys();$('menu').hidden=true;$('dialog').hidden=true;$('hud').hidden=false;$('pause').hidden=false;document.body.classList.add('playing');document.body.classList.remove('transforming','vehicle','aiming');cameraHeading=Math.PI;camera.position.set(-2,5.5,28);cameraFocus.copy(player.position).add(V(0,3.2,-3));spawnWave();
 }
 function showDialog(tag,title,text,action){$('dialog').hidden=false;$('dialogTag').textContent=tag;$('dialogTitle').textContent=title;$('dialogText').textContent=text;$('resume').textContent=action;$('helpControls').hidden=!['paused','help'].includes(state.mode);$('restart').hidden=state.mode==='help';}
 function finish(win){state.mode=win?'win':'lost';clearKeys();AudioBus.quiet();showDialog(win?'City Shield · Complete':'Guardian recovery',win?'A city reclaimed.':'Rise again.',win?`The Iron Legion is defeated. ${state.score.toLocaleString()} points earned. Keep exploring Nova City, or begin a fresh mission.`:'Repair cores restore armor. Transform to escape, and use shockwave when surrounded.',win?'Explore the city ↗':'Try again ↗');if(win)AudioBus.play('victory');}
@@ -173,7 +173,9 @@ function updateHUD(dt){
 }
 function update(dt){
  state.time+=dt;state.elapsed+=dt;for(const key of ['shot','pulse','hurt','toast','objectiveTime','aim'])state[key]=Math.max(0,state[key]-dt);state.shake=Math.max(0,state.shake-dt*.55);state.selection=Math.max(0,state.selection-dt*.8);updateTransformation(dt);
- const forward=clamp((keys.KeyW||keys.ArrowUp?1:0)-(keys.KeyS||keys.ArrowDown?1:0)-stick.y,-1,1),turn=clamp((keys.KeyA||keys.ArrowLeft?1:0)-(keys.KeyD||keys.ArrowRight?1:0)-stick.x,-1,1),boost=!!((keys.ShiftLeft||keys.ShiftRight)&&forward>0&&state.energy>2);
+ const held=clamp((keys.KeyW||keys.ArrowUp?1:0)-(keys.KeyS||keys.ArrowDown?1:0)-stick.y,-1,1);if(held&&swipe.id===null)flick.cruise=0;flick.boost=Math.max(0,flick.boost-dt);
+ const forward=held||flick.cruise,turn=clamp((keys.KeyA||keys.ArrowLeft?1:0)-(keys.KeyD||keys.ArrowRight?1:0)-stick.x,-1,1),boost=!!((keys.ShiftLeft||keys.ShiftRight||flick.boost>0)&&forward>0&&state.energy>2);
+ if(flick.turn){const step=Math.sign(flick.turn)*Math.min(Math.abs(flick.turn),dt*3.2);flick.turn-=step;state.heading+=step;}
  if(boost&&!state.boost)AudioBus.play('boost');state.boost=boost;state.turn=turn;
  const max=mix(heroType?10:8,heroType?29:23,state.morph);state.speed=mix(state.speed,forward*max*(boost?1.75:1),1-Math.exp(-dt*mix(8,2.5,state.morph)));state.energy=clamp(state.energy+(boost?-24:14)*dt,0,100);state.heading+=turn*dt*mix(2.6,1.55,state.morph)*(state.speed<-.5?-1:1);player.rotation.y=state.heading;
  const old=player.position.clone();move(player,Math.sin(state.heading)*state.speed*dt,Math.cos(state.heading)*state.speed*dt,state.car?.2:.4);if(player.position.distanceTo(old)<Math.abs(state.speed)*dt*.25)state.speed*=.7;art.poseRobot(player,state.morph,state.time,state.speed,dt,turn);
@@ -217,12 +219,21 @@ function swipeStart(e){
  swipeRing.style.left=e.clientX+'px';swipeRing.style.top=e.clientY+'px';swipeRing.hidden=false;stickEl.classList.add('active');steer(0,0,SWIPE_RADIUS);return true;
 }
 function swipeMove(e){if(e.pointerId!==swipe.id)return;const dx=e.clientX-swipe.x,dy=e.clientY-swipe.y;swipe.moved=Math.max(swipe.moved,Math.hypot(dx,dy));steer(dx,dy,SWIPE_RADIUS);}
+// Quick flicks act like game swipes: up = keep driving (again = boost), down = stop (again = reverse),
+// left/right = turn 45 degrees. Holding and dragging steers directly; a tap fires.
 function swipeEnd(e){
- if(e.pointerId!==swipe.id)return;const tap=swipe.moved<14&&performance.now()-swipe.t<300;releaseStick();
- if(tap&&state.mode==='playing'){mouseFire=true;setTimeout(()=>mouseFire=false,220);}
+ if(e.pointerId!==swipe.id)return;
+ const dx=e.clientX-swipe.x,dy=e.clientY-swipe.y,quick=performance.now()-swipe.t<450,dist=Math.max(swipe.moved,Math.hypot(dx,dy));releaseStick();
+ if(state.mode!=='playing'||e.type!=='pointerup')return;
+ if(dist<14&&quick){mouseFire=true;setTimeout(()=>mouseFire=false,220);return;}
+ if(!quick||dist<30){if(Math.abs(dy)>40)flick.cruise=0;return;}
+ if(Math.abs(dy)>=Math.abs(dx)){
+  if(dy<0){if(flick.cruise>0&&state.energy>10){flick.boost=1.4;toast('Boost!',.8);}else{flick.cruise=flick.cruise<0?0:1;toast(flick.cruise?'Driving ▲':'Stopped',.8);}}
+  else{flick.cruise=flick.cruise>0?0:-1;toast(flick.cruise?'Reversing ▼':'Stopped',.8);}
+ }else{flick.turn+=(dx<0?1:-1)*Math.PI/4;toast(dx<0?'◀ Turn left':'Turn right ▶',.6);}
 }
 // Show touch controls on touch devices, including touchscreen laptops that report a mouse.
-function enableTouch(){if(document.body.classList.contains('touch-mode'))return;document.body.classList.add('touch-mode');$('controlHint').innerHTML='Swipe <span>to drive</span><i>·</i> Tap <span>to fire</span>';}
+function enableTouch(){if(document.body.classList.contains('touch-mode'))return;document.body.classList.add('touch-mode');$('controlHint').innerHTML='Swipe ▲ <span>go</span><i>·</i>▼ <span>stop</span><i>·</i>◀ ▶ <span>turn</span><i>·</i>Tap <span>fire</span>';}
 if(matchMedia('(any-pointer: coarse)').matches||navigator.maxTouchPoints>0&&!matchMedia('(any-pointer: fine)').matches)enableTouch();
 addEventListener('pointerdown',e=>{if(e.pointerType==='touch'||e.pointerType==='pen')enableTouch();},true);
 addEventListener('touchstart',enableTouch,{capture:true,passive:true});
