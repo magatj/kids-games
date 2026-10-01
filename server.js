@@ -55,5 +55,5 @@ const server = http.createServer((req, res) => {
 server.listen(PORT, () => {
   console.log(`\n  ⚡ Cyber Shift: Apex Vanguard static server running!`);
   console.log(`  > Local:   http://localhost:${PORT}/`);
-  console.log(`  > Hub:     http://localhost:${PORT}/kids-hub.html\n`);
+  console.log(`  > Hub:     http://localhost:${PORT}/index.html\n`);
 });

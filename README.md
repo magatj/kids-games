@@ -83,7 +83,8 @@ In the year 2099, the **Null Syndicate** has initiated a hostile takeover of **S
 
 ```
 kids_games/
-├── index.html            # Main game entry point & HUD layout
+├── index.html            # Kids games menu (links to every game)
+├── cyber-shift.html      # Cyber Shift game entry point & HUD layout
 ├── styles.css            # Cyberpunk sci-fi UI styling & responsiveness
 ├── .gitlab-ci.yml        # GitLab Pages automated deployment pipeline
 ├── README.md             # Project documentation & deployment manual
@@ -121,7 +122,7 @@ Deploying this game to GitLab Pages is 100% automated using the included `.gitla
 
 2. **GitLab CI/CD Automated Build**:
    - GitLab will automatically trigger the `pages` pipeline defined in `.gitlab-ci.yml`.
-   - The job packages `index.html`, `styles.css`, `src/`, and `assets/` into the `public/` directory artifact.
+   - The job packages `index.html`, `cyber-shift.html`, `styles.css`, `src/`, and `assets/` into the `public/` directory artifact.
 
 3. **Access Your Live Game**:
    - Navigate to your GitLab repository: **Settings** > **Pages**.

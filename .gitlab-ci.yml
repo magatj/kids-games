@@ -10,7 +10,7 @@ pages:
     - mkdir -p public
     - cp -r assets public/
     - cp -r src public/
-    - cp index.html styles.css kids-hub.html public/
+    - cp index.html cyber-shift.html styles.css public/
     - cp steel-guardians* public/ 2>/dev/null || true
     - cp game.bundle.js public/ 2>/dev/null || true
     # Copy all supplemental games and image assets

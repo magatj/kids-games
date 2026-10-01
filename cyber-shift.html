@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>CYBER SHIFT: APEX VANGUARD • 3D Transforming Robot Action Game</title>
+  <meta name="description" content="An original high-quality 3D transforming robot action game deployable on GitLab Pages. Switch between high-speed interceptor vehicle mode and heavy combat robot mode in real time.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- 3D WebGL Canvas -->
+  <canvas id="world" aria-label="3D Transforming Robot Battle Simulation"></canvas>
+
+  <!-- Atmospheric Screen Overlays -->
+  <div id="vignette"></div>
+  <div id="damageFlash"></div>
+
+  <!-- Top Navigation Bar -->
+  <header>
+    <a href="#" class="brand">
+      <svg viewBox="0 0 36 40" aria-hidden="true">
+        <path d="M3 3 L12 8 L18 3 L24 8 L33 3 L30 27 L23 36 L13 36 L6 27 Z"/>
+        <path d="M9 15 L16 18 L15 23 L9 21 M27 15 L20 18 L21 23 L27 21 M14 29 L22 29"/>
+      </svg>
+      <div class="brand-text">CYBER <span>SHIFT</span></div>
+    </a>
+    <div class="top-actions">
+      <span class="location-tag">● SECTOR 09 - NEO-KYOTO</span>
+      <button id="soundBtn" aria-label="Toggle Sound Effects">SOUND: ON</button>
+      <button id="musicBtn" aria-label="Toggle Synthwave Music">MUSIC: ON</button>
+      <button id="qualityBtn" aria-label="Toggle Quality Setting">QUALITY: HIGH</button>
+      <button id="pauseBtn" hidden aria-label="Pause Game">Ⅱ PAUSE</button>
+      <a href="index.html" class="hub-link" title="Open Kids Games Hub">KIDS GAMES HUB ↗</a>
+    </div>
+  </header>
+
+  <!-- Main Menu / Garage Screen -->
+  <main id="menu" class="overlay">
+    <div class="intro">
+      <div class="eyebrow">AEGIS DEFENSE INITIATIVE // PROTOCOL 01</div>
+      <h1>TRANSMUTE.<br>ENGAGE.<br><span>DOMINATE.</span></h1>
+      <p class="lead">
+        Two tactical configurations. One apex defender.<br>
+        Shift between high-speed vehicle drift and combat robot frame in real time to purge the Null Syndicate from Sector 09.
+      </p>
+
+      <div class="select-label">SELECT VANGUARD FRAME</div>
+      <div class="heroes">
+        <div class="hero-card selected" data-hero="0">
+          <div class="swatch red"></div>
+          <div class="hero-info">
+            <b>AEGIS STRYKER</b>
+            <small>APEX INTERCEPTOR • HEAVY ARMOR</small>
+          </div>
+        </div>
+        <div class="hero-card" data-hero="1">
+          <div class="swatch cyan"></div>
+          <div class="hero-info">
+            <b>VOLT PHANTOM</b>
+            <small>HYPER-RECON • LIGHTNING SPEED</small>
+          </div>
+        </div>
+      </div>
+
+      <button id="startBtn" class="primary">DEPLOY VANGUARD <span>↗</span></button>
+      <p class="menu-note">CLIENT-SIDE 3D &nbsp;/&nbsp; INSTANT MORPH &nbsp;/&nbsp; WEBGL POWERED</p>
+    </div>
+
+    <!-- 3D Showcase Panel -->
+    <div class="showcase">
+      <span id="heroClass" class="eyebrow">APEX INTERCEPTOR / A-01</span>
+      <h2 id="heroTitle">AEGIS STRYKER</h2>
+      <p id="heroDescription">
+        Heavily armored titanium plating, twin heavy railguns, crushing kinetic impact.
+      </p>
+      <button id="previewBtn">T &nbsp; PREVIEW TRANSFORMATION</button>
+    </div>
+
+    <div class="menu-bottom">
+      <span><kbd>WASD</kbd> MOVE / DRIVE &nbsp; <kbd>T</kbd> TRANSFORM &nbsp; <kbd>CLICK / J</kbd> MELEE &nbsp; <kbd>R-CLICK / K</kbd> BLASTERS &nbsp; <kbd>SHIFT</kbd> BOOST</span>
+      <span>ORIGINAL ROBOT COMBAT ENGINE</span>
+    </div>
+  </main>
+
+  <!-- In-Game Heads Up Display (HUD) -->
+  <div id="hud" hidden>
+    <!-- Mission Tracker (Top Left) -->
+    <section class="mission panel">
+      <div class="eyebrow">TACTICAL DIRECTIVE</div>
+      <h2 id="missionTitle">SWEEP & SECURE SECTOR 09</h2>
+      <p id="objective">Purge Null Syndicate autonomous units</p>
+      <div class="wave-row">
+        <span id="wave">WAVE 01 / 03</span>
+        <b id="remaining">5 HOSTILES</b>
+      </div>
+      <div class="progress-track">
+        <i id="waveProgress" class="progress-fill"></i>
+      </div>
+    </section>
+
+    <!-- Status Meters (Bottom Left) -->
+    <section class="status panel">
+      <div class="status-head">
+        <b id="name">AEGIS STRYKER</b>
+        <span id="form" class="mode-badge mode-robot">COMBAT ROBOT</span>
+      </div>
+      <div class="meter-label">
+        <span>ARMOR INTEGRITY</span>
+        <b id="healthText">100%</b>
+      </div>
+      <div class="bar-track">
+        <i id="health" class="bar-fill"></i>
+      </div>
+      <div class="meter-label">
+        <span>BOOST MATRIX</span>
+        <span id="ability">E · EMP SHOCKWAVE READY</span>
+      </div>
+      <div class="bar-track">
+        <i id="energy" class="bar-fill boost"></i>
+      </div>
+    </section>
+
+    <!-- Radar Minimap (Top Right) -->
+    <section class="radar panel">
+      <div class="radar-label">SECTOR RADAR <span>N ↑</span></div>
+      <canvas id="radar" width="170" height="170" aria-label="Minimap showing enemies and repair pickups"></canvas>
+      <div class="radar-key">
+        <span>● HOSTILE</span>
+        <span>+ REPAIR CORE</span>
+      </div>
+    </section>
+
+    <!-- Speedometer (Bottom Right) -->
+    <div class="speed-gauge">
+      <b id="speed">0</b>
+      <span>KM/H</span>
+    </div>
+
+    <!-- Smart Target Reticle & Combo -->
+    <div id="reticle"><i></i></div>
+    <div id="targetLabel"></div>
+    <div id="combo">COMBO x3!</div>
+    <div id="toast" role="status"></div>
+
+    <!-- Quick Controls Footer Bar -->
+    <footer class="controls-bar">
+      <span><kbd>WASD</kbd> MOVE</span>
+      <button id="transformBtn"><kbd>T</kbd> TRANSFORM</button>
+      <span><kbd>J / L-CLICK</kbd> BLADE</span>
+      <span><kbd>K / R-CLICK</kbd> BLAST</span>
+      <button id="abilityBtn"><kbd>E</kbd> EMP SLAM</button>
+      <span><kbd>SHIFT</kbd> BOOST</span>
+      <span><kbd>SPACE</kbd> DRIFT/JUMP</span>
+    </footer>
+  </div>
+
+  <!-- Mobile / Touch Controls Overlay -->
+  <div id="touch">
+    <div class="dpad">
+      <button data-key="KeyW">▲</button>
+      <button data-key="KeyA">◀</button>
+      <button data-key="KeyS">▼</button>
+      <button data-key="KeyD">▶</button>
+    </div>
+    <div class="touch-actions">
+      <button id="touchTransform">MORPH</button>
+      <button data-key="ShiftLeft">BOOST</button>
+      <button data-key="KeyJ">BLADE</button>
+      <button data-key="Space">FIRE</button>
+    </div>
+  </div>
+
+  <!-- Dialog / Pause / Victory / Game Over Modal -->
+  <div id="dialog" class="dialog" hidden>
+    <div class="dialog-card">
+      <div class="eyebrow" id="dialogTag">SYSTEM STANDBY</div>
+      <h2 id="dialogTitle">TACTICAL PAUSE</h2>
+      <p id="dialogText">Mission is on standby.</p>
+      <div class="dialog-actions">
+        <button id="resumeBtn" class="primary">RESUME MISSION ↗</button>
+        <button id="restartBtn">RESTART MISSION</button>
+        <a href="index.html">ALL KIDS GAMES HUB</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fallback Dialog for Non-WebGL Browsers -->
+  <div id="error" class="dialog" hidden>
+    <div class="dialog-card">
+      <h2>GRAPHICS UNAVAILABLE</h2>
+      <p>This 3D action game requires WebGL acceleration. Please use a modern browser (Chrome, Edge, Firefox, or Safari) with hardware acceleration enabled.</p>
+      <div class="dialog-actions">
+        <a href="index.html">RETURN TO GAMES HUB</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Three.js Library -->
+  <script src="assets/three.min.js"></script>
+
+  <!-- Universal Game Application Script -->
+  <script src="game.bundle.js"></script>
+</body>
+</html>
