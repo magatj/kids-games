@@ -195,22 +195,34 @@ for(const b of document.querySelectorAll('[data-key]')){
  b.addEventListener('pointerdown',e=>{e.preventDefault();AudioBus.unlock();b.setPointerCapture(e.pointerId);keys[b.dataset.key]=true;});
  for(const event of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(event,()=>delete keys[b.dataset.key]);
 }
-// Touch joystick: analog drive/steer. Up = forward, down = reverse, sideways = steer.
-const stickEl=$('stick'),knob=$('stickKnob');
-function moveStick(e){
- const r=stickEl.getBoundingClientRect(),radius=r.width*.42;
- let dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2);const len=Math.hypot(dx,dy);
- if(len>radius){dx*=radius/len;dy*=radius/len;}
- knob.style.transform='translate(calc(-50% + '+dx+'px),calc(-50% + '+dy+'px))';
- const shape=v=>{const a=Math.abs(v);return a<.18?0:Math.sign(v)*Math.min(1,(a-.18)/.62);};
+// Touch steering. Up = forward, down = reverse, sideways = steer. Works two ways:
+// the on-screen joystick, or swiping anywhere on the game screen (a quick tap fires).
+const stickEl=$('stick'),knob=$('stickKnob'),swipeRing=$('swipeRing'),swipe={id:null,x:0,y:0,t:0,moved:0};
+const shape=v=>{const a=Math.abs(v);return a<.15?0:Math.sign(v)*Math.min(1,(a-.15)/.6);};
+function steer(dx,dy,radius){
+ const len=Math.hypot(dx,dy);if(len>radius){dx*=radius/len;dy*=radius/len;}
  stick.x=shape(dx/radius);stick.y=shape(dy/radius);
+ const s=stickEl.getBoundingClientRect().width*.42/radius;knob.style.transform='translate(calc(-50% + '+dx*s+'px),calc(-50% + '+dy*s+'px))';
+ swipeRing.style.setProperty('--dx',dx+'px');swipeRing.style.setProperty('--dy',dy+'px');
 }
-function releaseStick(){stick.x=stick.y=0;stick.id=null;if(knob)knob.style.transform='';stickEl&&stickEl.classList.remove('active');}
-stickEl.addEventListener('pointerdown',e=>{e.preventDefault();AudioBus.unlock();stick.id=e.pointerId;stickEl.setPointerCapture(e.pointerId);stickEl.classList.add('active');moveStick(e);});
+function moveStick(e){const r=stickEl.getBoundingClientRect();steer(e.clientX-(r.left+r.width/2),e.clientY-(r.top+r.height/2),r.width*.42);}
+function releaseStick(){stick.x=stick.y=0;stick.id=null;swipe.id=null;if(!knob)return;knob.style.transform='';stickEl.classList.remove('active');swipeRing.hidden=true;}
+stickEl.addEventListener('pointerdown',e=>{e.preventDefault();AudioBus.unlock();swipe.id=null;swipeRing.hidden=true;stick.id=e.pointerId;stickEl.setPointerCapture(e.pointerId);stickEl.classList.add('active');moveStick(e);});
 stickEl.addEventListener('pointermove',e=>{if(e.pointerId===stick.id)moveStick(e);});
 for(const event of ['pointerup','pointercancel','lostpointercapture'])stickEl.addEventListener(event,e=>{if(e.pointerId===stick.id)releaseStick();});
+const SWIPE_RADIUS=70;
+function swipeStart(e){
+ if(stick.id!==null||swipe.id!==null)return false;
+ Object.assign(swipe,{id:e.pointerId,x:e.clientX,y:e.clientY,t:performance.now(),moved:0});
+ swipeRing.style.left=e.clientX+'px';swipeRing.style.top=e.clientY+'px';swipeRing.hidden=false;stickEl.classList.add('active');steer(0,0,SWIPE_RADIUS);return true;
+}
+function swipeMove(e){if(e.pointerId!==swipe.id)return;const dx=e.clientX-swipe.x,dy=e.clientY-swipe.y;swipe.moved=Math.max(swipe.moved,Math.hypot(dx,dy));steer(dx,dy,SWIPE_RADIUS);}
+function swipeEnd(e){
+ if(e.pointerId!==swipe.id)return;const tap=swipe.moved<14&&performance.now()-swipe.t<300;releaseStick();
+ if(tap&&state.mode==='playing'){mouseFire=true;setTimeout(()=>mouseFire=false,220);}
+}
 // Show touch controls on touch devices, including touchscreen laptops that report a mouse.
-function enableTouch(){document.body.classList.add('touch-mode');}
+function enableTouch(){if(document.body.classList.contains('touch-mode'))return;document.body.classList.add('touch-mode');$('controlHint').innerHTML='Swipe <span>to drive</span><i>·</i> Tap <span>to fire</span>';}
 if(matchMedia('(any-pointer: coarse)').matches||navigator.maxTouchPoints>0&&!matchMedia('(any-pointer: fine)').matches)enableTouch();
 addEventListener('pointerdown',e=>{if(e.pointerType==='touch'||e.pointerType==='pen')enableTouch();},true);
 addEventListener('touchstart',enableTouch,{capture:true,passive:true});
@@ -220,7 +232,13 @@ addEventListener('keydown',e=>{
 });addEventListener('keyup',e=>delete keys[e.code]);
 function loseFocus(){clearKeys();mouseFire=false;if(state.mode==='playing')pause();AudioBus.quiet();}
 addEventListener('blur',loseFocus);document.addEventListener('visibilitychange',()=>{if(document.hidden)loseFocus();});
-$('world').addEventListener('pointerdown',e=>{if(state.mode==='playing'&&e.button===0){mouseFire=true;AudioBus.unlock();$('world').setPointerCapture(e.pointerId);}});for(const event of ['pointerup','pointercancel','lostpointercapture'])$('world').addEventListener(event,()=>mouseFire=false);$('world').addEventListener('contextmenu',e=>e.preventDefault());
+$('world').addEventListener('pointerdown',e=>{
+ if(state.mode!=='playing'||e.button!==0)return;AudioBus.unlock();
+ if(e.pointerType==='mouse'){mouseFire=true;$('world').setPointerCapture(e.pointerId);}
+ else if(swipeStart(e))$('world').setPointerCapture(e.pointerId);
+});
+$('world').addEventListener('pointermove',swipeMove);
+for(const event of ['pointerup','pointercancel','lostpointercapture'])$('world').addEventListener(event,e=>{if(e.pointerType==='mouse')mouseFire=false;else swipeEnd(e);});$('world').addEventListener('contextmenu',e=>e.preventDefault());
 $('world').addEventListener('webglcontextlost',e=>{e.preventDefault();loseFocus();$('errorText').textContent='The graphics connection was interrupted. Reload this page to reconnect.';$('error').hidden=false;});
 addEventListener('resize',()=>art.resize());
 let last=performance.now(),testFrozen=false;

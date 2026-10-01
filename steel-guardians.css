@@ -24,7 +24,11 @@ body.touch-mode.playing #touch{display:flex}
 #touch .touch-actions .t-boost{grid-area:bo;background:#2b4a6399}
 #touch .touch-actions .t-fire{grid-area:fi;justify-self:end;width:clamp(110px,21vmin,150px);height:clamp(110px,21vmin,150px);font-size:clamp(17px,3.2vmin,22px);background:#a8522e99;box-shadow:inset 0 0 0 3px #ffd2b055,0 6px 28px #000a}
 /* In touch mode the on-screen buttons replace the keyboard bar; move HUD panels up out of the way. */
-.touch-mode .controls,.touch-mode #controlHint{display:none}
+.touch-mode .controls{display:none}
+.touch-mode #controlHint{display:block;bottom:max(24px,env(safe-area-inset-bottom));font-size:15px;color:#e4f1ff;text-shadow:0 1px 8px #000}
+.touch-mode #controlHint span{color:#b8d3e5}
+#swipeRing{position:fixed;z-index:3;width:140px;height:140px;margin:-70px 0 0 -70px;border-radius:50%;pointer-events:none;box-shadow:inset 0 0 0 3px #e4f1ff55;background:#14253233}
+#swipeRing i{position:absolute;left:50%;top:50%;width:56px;height:56px;border-radius:50%;transform:translate(calc(-50% + var(--dx,0px)),calc(-50% + var(--dy,0px)));background:radial-gradient(circle at 35% 30%,#f2f7fb,#b8d3e5 55%,#7d9bb0);box-shadow:0 4px 18px #000a;opacity:.85}
 .touch-mode .status{top:88px;bottom:auto;left:max(20px,4%)}
 .touch-mode .mission{top:150px}
 .touch-mode .energy-status{top:250px;bottom:auto;right:max(20px,4%)}
