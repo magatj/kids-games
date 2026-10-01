@@ -1,0 +1,26 @@
+# GitLab CI/CD Pipeline for GitLab Pages Deployment
+# Deploys Cyber Shift: Apex Vanguard static WebGL game to GitLab Pages
+
+image: alpine:latest
+
+pages:
+  stage: deploy
+  script:
+    - echo "Packaging static WebGL game for GitLab Pages..."
+    - mkdir -p public
+    - cp -r assets public/
+    - cp -r src public/
+    - cp index.html styles.css kids-hub.html public/
+    - cp steel-guardians* public/ 2>/dev/null || true
+    - cp game.bundle.js public/ 2>/dev/null || true
+    # Copy all supplemental games and image assets
+    - cp -r *.html public/ 2>/dev/null || true
+    - cp -r *.png *.svg public/ 2>/dev/null || true
+    - echo "Deployment directory ready. Files in public/:"
+    - ls -la public/
+  artifacts:
+    paths:
+      - public
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_BRANCH == "main"
