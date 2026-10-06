@@ -1,0 +1,16 @@
+{
+  "name": "Steel Guardians — Nova City",
+  "short_name": "Steel Guardians",
+  "start_url": "steel-guardians.html",
+  "scope": "./",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "landscape",
+  "background_color": "#12171c",
+  "theme_color": "#12171c",
+  "icons": [
+    { "src": "assets/steel-guardians-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "assets/steel-guardians-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
+    { "src": "assets/steel-guardians-180.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}

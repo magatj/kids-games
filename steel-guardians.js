@@ -188,7 +188,7 @@ function update(dt){
 }
 function refreshQuality(){const q=art.getQuality(),label=['Low','Medium','High'][q];$('quality').innerHTML=label+' <span>⌄</span>';$('quality').setAttribute('aria-label','Graphics quality: '+label);document.body.classList.toggle('low-quality',q===0);}
 function userAction(action){return ()=>{AudioBus.unlock();action();};}
-$('start').onclick=start;$('preview').onclick=transform;$('transform').onclick=transform;$('touchTransform').onclick=transform;$('touchPulse').onclick=userAction(pulse);$('touchSwitch').onclick=()=>changeHero(1-heroType);$('pulse').onclick=userAction(pulse);$('switch').onclick=()=>changeHero(1-heroType);$('pause').onclick=pause;$('restart').onclick=start;$('resume').onclick=resume;
+$('start').onclick=()=>{if(isTouch())enterFullscreen();start();};$('preview').onclick=transform;$('transform').onclick=transform;$('touchTransform').onclick=transform;$('touchPulse').onclick=userAction(pulse);$('touchSwitch').onclick=()=>changeHero(1-heroType);$('pulse').onclick=userAction(pulse);$('switch').onclick=()=>changeHero(1-heroType);$('pause').onclick=pause;$('restart').onclick=()=>{if(isTouch())enterFullscreen();start();};$('resume').onclick=()=>{if(isTouch())enterFullscreen();resume();};
 $('help').onclick=()=>{state.mode='help';showDialog('Your city. Your rules.','Become a guardian.','Defeat three waves of the Iron Legion, then enjoy free driving.','Got it ↗');};
 $('sound').onclick=()=>{const muted=AudioBus.toggle();$('sound').setAttribute('aria-pressed',String(muted));$('sound').setAttribute('aria-label',muted?'Enable sound':'Mute sound');};
 $('quality').onclick=()=>{art.setQuality((art.getQuality()+1)%3);refreshQuality();};
@@ -252,6 +252,32 @@ $('world').addEventListener('pointermove',swipeMove);
 for(const event of ['pointerup','pointercancel','lostpointercapture'])$('world').addEventListener(event,e=>{if(e.pointerType==='mouse')mouseFire=false;else swipeEnd(e);});$('world').addEventListener('contextmenu',e=>e.preventDefault());
 $('world').addEventListener('webglcontextlost',e=>{e.preventDefault();loseFocus();$('errorText').textContent='The graphics connection was interrupted. Reload this page to reconnect.';$('error').hidden=false;});
 addEventListener('resize',()=>art.resize());
+// Full screen hides the browser bars so stray taps near the edges stay in the game. Tablets enter it on Play;
+// dropping out mid-game pauses. (Home/app-switch gestures can't be blocked by any web page.)
+const root=document.documentElement,fsButton=$('fullscreen');
+const fsElement=()=>document.fullscreenElement||document.webkitFullscreenElement;
+const fsSupported=!!(root.requestFullscreen||root.webkitRequestFullscreen);
+const installed=matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches||navigator.standalone===true;
+function isTouch(){return document.body.classList.contains('touch-mode');}
+function lockOrientation(){try{const kind=screen.orientation.type.startsWith('portrait')?'portrait':'landscape';screen.orientation.lock(kind).catch(()=>{});}catch{}}
+function enterFullscreen(){
+ if(!fsSupported||fsElement())return;
+ try{const request=root.requestFullscreen?root.requestFullscreen({navigationUI:'hide'}):root.webkitRequestFullscreen();if(request&&request.then)request.then(lockOrientation,()=>{});else lockOrientation();}catch{}
+}
+function exitFullscreen(){try{const p=document.exitFullscreen?document.exitFullscreen():document.webkitExitFullscreen();if(p&&p.catch)p.catch(()=>{});}catch{}}
+function syncFullscreen(){
+ const on=!!fsElement();fsButton.setAttribute('aria-pressed',String(on));fsButton.setAttribute('aria-label',on?'Exit full screen':'Play in full screen');
+ fsButton.querySelector('use').setAttribute('href',on?'#i-full-exit':'#i-full');fsButton.querySelector('span').textContent=on?'Exit full screen':'Full screen';
+ if(!on&&state.mode==='playing')pause();
+}
+fsButton.hidden=!fsSupported||installed;
+fsButton.onclick=()=>fsElement()?exitFullscreen():enterFullscreen();
+document.addEventListener('fullscreenchange',syncFullscreen);document.addEventListener('webkitfullscreenchange',syncFullscreen);
+// Keep the screen awake during play so the tablet doesn't dim and lock mid-game.
+let wakeLock=null;
+async function keepAwake(){if(wakeLock||!navigator.wakeLock||document.hidden)return;try{wakeLock=await navigator.wakeLock.request('screen');wakeLock.addEventListener('release',()=>wakeLock=null);}catch{}}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&state.mode!=='menu')keepAwake();});
+addEventListener('pointerdown',()=>{if(state.mode==='playing')keepAwake();},true);
 let last=performance.now(),testFrozen=false;
 function frame(now){
  requestAnimationFrame(frame);const elapsed=(now-last)/1000,dt=Math.min(elapsed,.05);last=now;if(document.hidden||testFrozen)return;
