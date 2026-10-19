@@ -259,7 +259,7 @@
       50% {
         fill: #fff176;
         filter: drop-shadow(0 0 28px rgba(251, 191, 36, 1)) drop-shadow(0 0 60px rgba(255, 230, 0, 0.9));
-        transform: scale(1.08);
+        transform: scale(1);
       }
     }
 
@@ -275,10 +275,8 @@
       stroke-width: 1.8;
     }
 
-    .usa-map .dccircle,
-    .usa-map .dc {
-      display: none;
-    }
+    .usa-map g.state > .dc { display: none; }
+    .usa-map .dccircle { stroke: white; stroke-width: 1.5; }
 
     .block {
       padding: 18px;
@@ -355,7 +353,7 @@
 
     @keyframes showme-pulse {
       0%, 100% { transform: scale(1); box-shadow: inset 0 -5px 0 rgba(0,0,0,0.18), 0 6px 20px rgba(245,188,26,0.45); }
-      50% { transform: scale(1.04); box-shadow: inset 0 -5px 0 rgba(0,0,0,0.18), 0 10px 32px rgba(245,188,26,0.7); }
+      50% { transform: scale(1); box-shadow: inset 0 -5px 0 rgba(0,0,0,0.18), 0 10px 32px rgba(245,188,26,0.7); }
     }
 
     .status-line {
@@ -367,7 +365,7 @@
     }
 
     .status-line strong {
-      color: white;
+      color: var(--ink);
       font-size: 1rem;
     }
 
@@ -397,6 +395,31 @@
         grid-template-columns: 1fr;
       }
     }
+    .hero { border-top: 6px solid #ffbe39; }
+    .stats { align-self: center; }
+    .stat:nth-child(1) { border-bottom: 5px solid #ffc043; }
+    .stat:nth-child(2) { border-bottom: 5px solid #48c9c0; }
+    .stat:nth-child(3) { border-bottom: 5px solid #ff79a6; }
+    .stat:nth-child(4) { border-bottom: 5px solid #a783eb; }
+    .hero-tools { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 16px; }
+    .explorer-badge { color: #644494; font-weight: 800; }
+    #fullscreenBtn { background: #6541b5; min-width: 165px; }
+    button:focus-visible { outline: 4px solid #5836a6; outline-offset: 4px; }
+    #promptText { font-size: 1.4rem; font-weight: 800; color: #263d69; line-height: 1.35; }
+    .side-panel > .block:first-of-type { background: #eef3ff; border: 2px solid #c3d3fa; }
+    #showAnswerBtn small { display: block; margin-top: 5px; font-size: .85rem; letter-spacing: 0; font-weight: 600; }
+    .map-guide { margin: 12px 0 0; color: #385879; font-size: .9rem; line-height: 1.5; }
+    #mapReveal { margin: 12px 0 0; padding: 12px; border-radius: 14px; background: #eee4ff; color: #4d2788; font-weight: 800; }
+    .reveal-pointer { pointer-events: none; }
+    .reveal-pointer text { font-size: 19px; font-weight: 800; fill: #fff; }
+    :fullscreen .shell, .expanded-view .shell { width: min(1600px, 100%); }
+    .expanded-view { position: fixed; inset: 0; overflow: auto; z-index: 100; }
+    :fullscreen .hero, .expanded-view .hero { padding: 14px 20px; }
+    :fullscreen .hero h1, .expanded-view .hero h1 { font-size: 2rem; }
+    :fullscreen .hero p, .expanded-view .hero p { display: none; }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+    }
   </style>
 </head>
 <body>
@@ -406,6 +429,11 @@
         <div class="eyebrow">Addie's Personalized Study Game</div>
         <h1>Addie's <span>Map Adventure</span></h1>
         <p>A bright U.S. map game made just for Addie. Tap real state shapes, collect points, build a streak, and switch on capitals when she wants a bigger challenge.</p>
+        <div class="hero-tools">
+          <button id="fullscreenBtn" aria-pressed="false">⛶ Full Screen</button>
+          <span class="explorer-badge">50 states + DC · One big adventure!</span>
+          <span id="screenStatus" role="status"></span>
+        </div>
       </section>
 
       <section class="stats">
@@ -426,7 +454,7 @@
           <div class="mode-chip" id="modeChip">State Hunt</div>
         </div>
         <div class="map-wrap">
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 959 593" class="usa-map" id="usaMap" role="img" aria-labelledby="mapTitle">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 959 593" class="usa-map" id="usaMap" role="group" aria-labelledby="mapTitle">
   <title id="mapTitle">United States map</title>
 <defs>
 <style type="text/css">
@@ -715,13 +743,22 @@ Place this code in the empty space below. */
 <path class="va-wv" d="m 722.7,296.9 .7,.6 -.8,1.2 1.5,.7 .1,1.5 4.4,2.3 2.3,-.1 1.9,-1.8 .8,-1.7 3,1.8 5.5,-2.4 .5,-.9 -.8,-.5 .6,-1.4 1.5,1 4.3,-3.1 .7,1.1 2.3,-2 -.1,-1.4 1.5,-1.9 -1.5,-1.2 1,-3.3 3.7,-6.3 -.4,-1.9 2.1,-2.2 -.4,-1.5 1.4,-1.7 .1,-4.7 2.3,.7 1.3,1.9 2.8,.5 1.3,-1.6 2.3,-8.5 2.4,1.1 1,-2.5 .9,-.8 1.4,-1.8 .9,-.8 .5,-2.1 1.2,-.8 -.1,-2.9 .8,-2.3 -.9,-1.6 .2,-.9 10,5.2 .5,-2.3 .4,-1.6 .4,-.7"/>
 </g>
 
-<circle class="state borders dccircle dc" cx="801.6" cy="252.1" r="5">
+<circle class="dc dccircle" cx="801.6" cy="252.1" r="5">
 <title>District of Columbia</title></circle>
 
 <path class="separator1" fill="none" d="m 215,493 v 55 l 36,45 m -251,-168 h 147 l 68,68 h 85 l 54,54 v 46"/>
 
+<g id="revealPointer" class="reveal-pointer" aria-hidden="true" visibility="hidden">
+  <path id="pointerLine" fill="none" stroke="#4d2788" stroke-width="5"/>
+  <circle id="pointerRing" r="13" fill="none" stroke="#4d2788" stroke-width="4"/>
+  <circle id="pointerDot" r="4" fill="#4d2788"/>
+  <rect id="pointerLabelBox" width="250" height="42" rx="14" fill="#4d2788"/>
+  <text id="pointerLabel" text-anchor="middle"></text>
+</g>
 </svg>
         </div>
+        <p id="mapReveal" role="status" hidden></p>
+        <p class="map-guide">🧭 Find the place in the clue • Need help? Tap <strong>Show Me!</strong></p>
       </section>
 
       <aside class="panel side-panel">
@@ -741,7 +778,7 @@ Place this code in the empty space below. */
         </section>
 
         <div class="button-grid">
-          <button id="showAnswerBtn">👆 Show Me!</button>
+          <button id="showAnswerBtn">📍 Show Me!<small>Light up the answer + point to it</small></button>
           <button class="secondary" id="nextBtn">Next Round</button>
           <button class="secondary" id="restartBtn">Restart</button>
           <button class="secondary" id="shuffleBtn">Fresh Start</button>
@@ -749,14 +786,14 @@ Place this code in the empty space below. */
 
         <section class="block">
           <h3>Coach Corner</h3>
-          <p id="feedback">The map is ready. Start by finding the state named in the clue.</p>
+          <p id="feedback" role="status" aria-live="polite">The map is ready. Start by finding the state named in the clue.</p>
         </section>
 
         <section class="block">
           <h3>Capital Helper</h3>
           <p id="capitalHint">When capitals mode is off, the clue uses the state name. When capitals mode is on, the clue gives the capital city instead.</p>
           <div class="status-line">
-            <span>Target state</span>
+            <span>Target place</span>
             <strong id="answerState">Waiting for round</strong>
             <span id="answerCapital">The capital will show up after a reveal or answer.</span>
           </div>
@@ -777,6 +814,7 @@ Place this code in the empty space below. */
       co: { name: "Colorado", capital: "Denver" },
       ct: { name: "Connecticut", capital: "Hartford" },
       de: { name: "Delaware", capital: "Dover" },
+      dc: { name: "Washington, DC", capital: null, fact: "Washington, DC is the national capital and a federal district, not a state." },
       fl: { name: "Florida", capital: "Tallahassee" },
       ga: { name: "Georgia", capital: "Atlanta" },
       hi: { name: "Hawaii", capital: "Honolulu" },
@@ -877,8 +915,7 @@ Place this code in the empty space below. */
       answered: false
     };
 
-    const mapPaths = [...document.querySelectorAll("#usaMap g.state > path")]
-      .filter((path) => !path.classList.contains("dc"));
+    const mapPaths = [...document.querySelectorAll("#usaMap g.state > path:not(.dc), #usaMap circle.dc")];
 
     mapPaths.forEach((path, index) => {
       const code = path.classList[0];
@@ -891,7 +928,7 @@ Place this code in the empty space below. */
       path.style.setProperty("--state-fill", palette[index % palette.length]);
       path.setAttribute("tabindex", "0");
       path.setAttribute("role", "button");
-      path.setAttribute("aria-label", `${info.name}, capital ${info.capital}`);
+      path.setAttribute("aria-label", info.fact || `${info.name}, capital ${info.capital}`);
       path.addEventListener("click", () => answer(code));
       path.addEventListener("keydown", (event) => {
         if (event.key === "Enter" || event.key === " ") {
@@ -900,14 +937,16 @@ Place this code in the empty space below. */
         }
       });
       path.addEventListener("pointerenter", () => {
-        hoverStateEl.textContent = `${info.name} · ${info.capital}`;
+        hoverStateEl.textContent = info.fact || `${info.name} · ${info.capital}`;
       });
       path.addEventListener("focus", () => {
-        hoverStateEl.textContent = `${info.name} · ${info.capital}`;
+        hoverStateEl.textContent = info.fact || `${info.name} · ${info.capital}`;
       });
     });
 
     function clearHighlights() {
+      document.getElementById("revealPointer").setAttribute("visibility", "hidden");
+      document.getElementById("mapReveal").hidden = true;
       mapPaths.forEach((path) => {
         path.classList.remove("correct", "wrong", "hint");
       });
@@ -934,8 +973,8 @@ Place this code in the empty space below. */
       modeChipEl.textContent = game.showCapitals ? "Capital Quest" : "State Hunt";
       toggleModeBtn.textContent = game.showCapitals ? "Capitals: On" : "Capitals: Off";
       capitalHintEl.textContent = game.showCapitals
-        ? "Capital mode is on. The clue gives a capital city, and Addie taps the state that matches it."
-        : "State mode is on. The clue gives the state name, which makes learning the map easier first.";
+        ? "Match each capital to its state, or find the national capital when asked."
+        : "Find each place by name: all 50 states plus Washington, DC.";
     }
 
     function setAnswerPanel(code, revealed) {
@@ -945,9 +984,9 @@ Place this code in the empty space below. */
         return;
       }
       const info = stateInfo[code];
-      answerStateEl.textContent = info.name;
+      answerStateEl.textContent = revealed ? info.name : "Ready to explore!";
       answerCapitalEl.textContent = revealed
-        ? `Capital: ${info.capital}`
+        ? (info.fact || `Capital: ${info.capital}`)
         : "Capital hidden until Addie answers or taps Show Me.";
     }
 
@@ -956,7 +995,14 @@ Place this code in the empty space below. */
       game.answered = false;
       game.currentCode = shuffle(stateCodes)[0];
       const info = stateInfo[game.currentCode];
-      if (game.showCapitals) {
+      if (game.currentCode === "dc") {
+        promptTitle.textContent = game.showCapitals ? "Find the national capital" : "Find the place";
+        promptText.textContent = game.showCapitals
+          ? "Where is the capital of the United States?"
+          : "Find Washington, DC on the map.";
+        feedbackEl.textContent = "Find the place in the clue, then tap it on the map.";
+        speak(promptText.textContent);
+      } else if (game.showCapitals) {
         promptTitle.textContent = "Match the capital";
         promptText.textContent = `Which state has the capital city ${info.capital}?`;
         feedbackEl.textContent = `New round. Find the state whose capital is ${info.capital}.`;
@@ -977,6 +1023,7 @@ Place this code in the empty space below. */
         return;
       }
       game.answered = true;
+      clearHighlights();
       const correct = code === game.currentCode;
       const currentPath = pathFor(game.currentCode);
       const pickedPath = pathFor(code);
@@ -993,16 +1040,51 @@ Place this code in the empty space below. */
         game.score += 1;
         game.streak += 1;
         const praise = yayLines[Math.floor(Math.random() * yayLines.length)];
-        feedbackEl.textContent = `${praise}, Addie. ${answerInfo.name} is right, and its capital is ${answerInfo.capital}.`;
+        feedbackEl.textContent = `${praise}, Addie. ${answerInfo.fact || `${answerInfo.name} is right, and its capital is ${answerInfo.capital}.`}`;
         speak(`Yes! That's ${answerInfo.name}! Good job!`);
       } else {
         game.streak = 0;
         const encourage = tryLines[Math.floor(Math.random() * tryLines.length)];
-        feedbackEl.textContent = `${encourage}, Addie. The correct answer was ${answerInfo.name}, and its capital is ${answerInfo.capital}.`;
+        feedbackEl.textContent = `${encourage}, Addie. The correct answer was ${answerInfo.name}. ${answerInfo.fact || `Its capital is ${answerInfo.capital}.`}`;
         speak(`That's ${wrongInfo ? wrongInfo.name : "not it"}. ${encourage}. The answer was ${answerInfo.name}.`);
       }
       setAnswerPanel(game.currentCode, true);
+      pointToState(game.currentCode);
       updateHud();
+    }
+
+    function pointToState(code) {
+      const shape = pathFor(code);
+      const box = shape.getBBox();
+      // A bounding-box center can fall in water for island/coastal states.
+      // Find an interior point closest to the center of the actual SVG shape.
+      let target = null;
+      let best = Infinity;
+      for (let row = 0; row < 40; row++) {
+        for (let col = 0; col < 40; col++) {
+          const point = new DOMPoint(box.x + box.width * (col + .5) / 40, box.y + box.height * (row + .5) / 40);
+          const distance = (point.x - box.x - box.width / 2) ** 2 + (point.y - box.y - box.height / 2) ** 2;
+          if (distance < best && shape.isPointInFill(point)) { target = point; best = distance; }
+        }
+      }
+      if (!target) return;
+      const x = target.x, y = target.y;
+      const labelX = Math.max(8, Math.min(701, x - 125));
+      const labelY = y < 100 ? y + 55 : y - 95;
+      document.getElementById("pointerLine").setAttribute("d", `M${labelX + 125} ${labelY + (y < 100 ? 0 : 42)} L${x} ${y}`);
+      ["pointerRing", "pointerDot"].forEach(id => {
+        const dot = document.getElementById(id);
+        dot.setAttribute("cx", x); dot.setAttribute("cy", y);
+      });
+      const labelBox = document.getElementById("pointerLabelBox");
+      labelBox.setAttribute("x", labelX); labelBox.setAttribute("y", labelY);
+      const label = document.getElementById("pointerLabel");
+      label.setAttribute("x", labelX + 125); label.setAttribute("y", labelY + 27);
+      label.textContent = stateInfo[code].name;
+      const caption = document.getElementById("mapReveal");
+      caption.textContent = `📍 ${stateInfo[code].name} — follow the purple pointer!`;
+      caption.hidden = false;
+      document.getElementById("revealPointer").setAttribute("visibility", "visible");
     }
 
     function revealAnswer() {
@@ -1017,9 +1099,11 @@ Place this code in the empty space below. */
         currentPath.classList.add("hint");
       }
       const info = stateInfo[game.currentCode];
-      feedbackEl.textContent = `Here it is, Addie. ${info.name} is the right state, and its capital is ${info.capital}.`;
+      feedbackEl.textContent = `Here it is, Addie. ${info.fact || `${info.name} is the right state, and its capital is ${info.capital}.`}`;
       speak(`Here it is! ${info.name}!`);
       setAnswerPanel(game.currentCode, true);
+      pointToState(game.currentCode);
+      document.getElementById("usaMap").scrollIntoView({ behavior: "instant", block: "center" });
       updateHud();
     }
 
@@ -1052,6 +1136,36 @@ Place this code in the empty space below. */
       newRound();
     });
 
+    const fullscreenBtn = document.getElementById("fullscreenBtn");
+    function syncFullscreen() {
+      const active = Boolean(document.fullscreenElement) || document.body.classList.contains("expanded-view");
+      fullscreenBtn.textContent = active ? "⛶ Exit Full Screen" : "⛶ Full Screen";
+      fullscreenBtn.setAttribute("aria-pressed", String(active));
+    }
+    fullscreenBtn.addEventListener("click", async () => {
+      const status = document.getElementById("screenStatus");
+      try {
+        if (document.fullscreenElement) await document.exitFullscreen();
+        else if (document.body.classList.contains("expanded-view")) document.body.classList.remove("expanded-view");
+        else if (document.documentElement.requestFullscreen && document.fullscreenEnabled) await document.documentElement.requestFullscreen();
+        else {
+          document.body.classList.add("expanded-view");
+          status.textContent = "Expanded view · Exit above or press Esc";
+        }
+        if (!document.body.classList.contains("expanded-view")) status.textContent = "";
+      } catch {
+        status.textContent = "Full screen couldn’t open. Please try again.";
+      }
+      syncFullscreen();
+    });
+    document.addEventListener("fullscreenchange", syncFullscreen);
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape") {
+        document.body.classList.remove("expanded-view");
+        document.getElementById("screenStatus").textContent = "";
+        syncFullscreen();
+      }
+    });
     updateHud();
     setAnswerPanel(null, false);
     newRound();
